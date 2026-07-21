@@ -1,11 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Member, Payment, PaymentStatus, Expense } from '../types';
+import { Member, Payment, PaymentStatus, Expense, AppSettings } from '../types';
 import { generatePaymentMonth } from '../lib/utils';
 
 interface AppState {
   members: Member[];
   payments: Payment[];
   expenses: Expense[];
+  settings: AppSettings;
   addMember: (member: Omit<Member, 'id'>) => void;
   updateMember: (id: string, member: Partial<Member>) => void;
   registerPayment: (paymentId: string, method: Payment['method'], date: string) => void;
@@ -13,6 +14,7 @@ interface AppState {
   getMemberPayments: (memberId: string) => Payment[];
   addExpense: (expense: Omit<Expense, 'id'>) => void;
   deleteExpense: (id: string) => void;
+  updateSettings: (settings: Partial<AppSettings>) => void;
 }
 
 const AppContext = createContext<AppState | undefined>(undefined);
@@ -44,6 +46,14 @@ const INITIAL_MEMBERS: Member[] = [
   }
 ];
 
+const INITIAL_SETTINGS: AppSettings = {
+  pixKey: '55292931829',
+  bankName: 'Nubank',
+  accountName: 'Hugo Daniel Ribeiro Nantes',
+  defaultMonthlyFee: 50,
+  houseGuidelines: '',
+};
+
 export function AppProvider({ children }: { children: ReactNode }) {
   const [members, setMembers] = useState<Member[]>(() => {
     const saved = localStorage.getItem('celp_members');
@@ -60,6 +70,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return saved ? JSON.parse(saved) : [];
   });
 
+  const [settings, setSettings] = useState<AppSettings>(() => {
+    const saved = localStorage.getItem('celp_settings');
+    return saved ? JSON.parse(saved) : INITIAL_SETTINGS;
+  });
+
   useEffect(() => {
     localStorage.setItem('celp_members', JSON.stringify(members));
   }, [members]);
@@ -71,6 +86,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     localStorage.setItem('celp_expenses', JSON.stringify(expenses));
   }, [expenses]);
+
+  useEffect(() => {
+    localStorage.setItem('celp_settings', JSON.stringify(settings));
+  }, [settings]);
 
   const addExpense = (expenseData: Omit<Expense, 'id'>) => {
     const newExpense: Expense = {
@@ -151,8 +170,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return payments.filter(p => p.memberId === memberId).sort((a, b) => b.month.localeCompare(a.month));
   };
 
+  const updateSettings = (updates: Partial<AppSettings>) => {
+    setSettings((prev) => ({ ...prev, ...updates }));
+  };
+
   return (
-    <AppContext.Provider value={{ members, payments, expenses, addMember, updateMember, registerPayment, generateMonthlyPayments, getMemberPayments, addExpense, deleteExpense }}>
+    <AppContext.Provider value={{ members, payments, expenses, settings, addMember, updateMember, registerPayment, generateMonthlyPayments, getMemberPayments, addExpense, deleteExpense, updateSettings }}>
       {children}
     </AppContext.Provider>
   );

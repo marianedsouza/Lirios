@@ -32,3 +32,11 @@ export interface Expense {
   date: string; // YYYY-MM-DD
 }
 
+export interface AppSettings {
+  pixKey: string;
+  bankName: string;
+  accountName: string;
+  defaultMonthlyFee: number;
+  houseGuidelines: string;
+}
+
