@@ -16,6 +16,36 @@ async function startServer() {
     res.json({ status: "ok" });
   });
 
+  // ─── Auth ──────────────────────────────────────────────────
+  app.post("/api/auth/admin", async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      const admin = await prisma.admin.findUnique({ where: { email } });
+      if (!admin || admin.password !== password) {
+        return res.status(401).json({ error: "Credenciais inválidas" });
+      }
+      res.json({ id: admin.id, name: admin.name, email: admin.email });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.post("/api/auth/member", async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      const member = await prisma.member.findFirst({ where: { username } });
+      if (!member || member.password !== password) {
+        return res.status(401).json({ error: "Credenciais inválidas" });
+      }
+      if (member.status !== "Ativo") {
+        return res.status(403).json({ error: "Conta inativa" });
+      }
+      res.json({ id: member.id, name: member.name });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
   // ─── Members ───────────────────────────────────────────────
   app.get("/api/members", async (_req, res) => {
     try {
@@ -119,6 +149,82 @@ async function startServer() {
     try {
       await prisma.expense.delete({ where: { id: req.params.id } });
       res.json({ ok: true });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  // ─── Payment Receipts ──────────────────────────────────────
+  app.get("/api/receipts", async (_req, res) => {
+    try {
+      const receipts = await prisma.paymentReceipt.findMany({ orderBy: { createdAt: "desc" } });
+      res.json(receipts);
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.get("/api/receipts/pending", async (_req, res) => {
+    try {
+      const receipts = await prisma.paymentReceipt.findMany({
+        where: { status: "Pendente" },
+        orderBy: { createdAt: "desc" },
+      });
+      res.json(receipts);
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.post("/api/receipts", async (req, res) => {
+    try {
+      const receipt = await prisma.paymentReceipt.create({ data: req.body });
+      res.json(receipt);
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.put("/api/receipts/:id/approve", async (req, res) => {
+    try {
+      const { reviewedBy } = req.body;
+      const receipt = await prisma.paymentReceipt.update({
+        where: { id: req.params.id },
+        data: {
+          status: "Aprovado",
+          reviewedBy: reviewedBy || "Admin",
+          reviewedAt: new Date().toISOString(),
+        },
+      });
+
+      // Update the related payment to "Pago"
+      await prisma.payment.update({
+        where: { id: receipt.paymentId },
+        data: {
+          status: "Pago",
+          method: "PIX",
+          paymentDate: receipt.paidAt,
+        },
+      });
+
+      res.json(receipt);
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.put("/api/receipts/:id/reject", async (req, res) => {
+    try {
+      const { reviewedBy } = req.body;
+      const receipt = await prisma.paymentReceipt.update({
+        where: { id: req.params.id },
+        data: {
+          status: "Rejeitado",
+          reviewedBy: reviewedBy || "Admin",
+          reviewedAt: new Date().toISOString(),
+        },
+      });
+      res.json(receipt);
     } catch (e: any) {
       res.status(500).json({ error: e.message });
     }

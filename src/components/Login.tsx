@@ -1,25 +1,44 @@
 import React, { useState } from 'react';
-import { useAppStore } from '../store/useStore';
 import { Users, UserCircle, ShieldCheck } from 'lucide-react';
+import { authApi } from '../lib/api';
 
 interface LoginProps {
   onLogin: (role: 'admin' | 'member', memberId?: string) => void;
 }
 
 export function Login({ onLogin }: LoginProps) {
-  const { members } = useAppStore();
   const [activeTab, setActiveTab] = useState<'admin' | 'member'>('admin');
-  const [selectedMember, setSelectedMember] = useState<string>('');
+  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleAdminLogin = (e: React.FormEvent) => {
+  const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    onLogin('admin');
+    setError('');
+    setLoading(true);
+    try {
+      await authApi.admin(email, password);
+      onLogin('admin');
+    } catch (err: any) {
+      setError(err.message || 'Credenciais inválidas');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleMemberLogin = (e: React.FormEvent) => {
+  const handleMemberLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (selectedMember) {
-      onLogin('member', selectedMember);
+    setError('');
+    setLoading(true);
+    try {
+      const result = await authApi.member(username, password);
+      onLogin('member', result.id);
+    } catch (err: any) {
+      setError(err.message || 'Credenciais inválidas');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -42,7 +61,7 @@ export function Login({ onLogin }: LoginProps) {
           
           <div className="flex bg-slate-100 p-1 rounded-md mb-8">
             <button
-              onClick={() => setActiveTab('admin')}
+              onClick={() => { setActiveTab('admin'); setError(''); }}
               className={`flex-1 flex items-center justify-center py-2 text-[11px] font-bold uppercase tracking-wider rounded transition-colors ${
                 activeTab === 'admin' ? 'bg-white text-emerald-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'
               }`}
@@ -51,7 +70,7 @@ export function Login({ onLogin }: LoginProps) {
               Diretoria
             </button>
             <button
-              onClick={() => setActiveTab('member')}
+              onClick={() => { setActiveTab('member'); setError(''); }}
               className={`flex-1 flex items-center justify-center py-2 text-[11px] font-bold uppercase tracking-wider rounded transition-colors ${
                 activeTab === 'member' ? 'bg-white text-emerald-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'
               }`}
@@ -61,37 +80,66 @@ export function Login({ onLogin }: LoginProps) {
             </button>
           </div>
 
+          {error && (
+            <div className="mb-4 p-3 bg-rose-50 border border-rose-200 rounded text-xs text-rose-700 text-center font-medium">
+              {error}
+            </div>
+          )}
+
           {activeTab === 'admin' ? (
-            <form onSubmit={handleAdminLogin} className="space-y-6">
+            <form onSubmit={handleAdminLogin} className="space-y-4">
               <div>
-                <p className="text-xs text-slate-500 text-center mb-6">
-                  Acesso exclusivo à área administrativa.
-                </p>
-                <button type="submit" className="w-full h-10 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider rounded transition-colors">
-                  Acessar Painel
-                </button>
+                <label className="block text-[11px] font-bold uppercase text-slate-500 mb-1">E-mail</label>
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  placeholder="admin@exemplo.com"
+                />
               </div>
+              <div>
+                <label className="block text-[11px] font-bold uppercase text-slate-500 mb-1">Senha</label>
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  placeholder="Sua senha"
+                />
+              </div>
+              <button type="submit" disabled={loading} className="w-full h-10 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-xs uppercase tracking-wider rounded transition-colors">
+                {loading ? 'Entrando...' : 'Acessar Painel'}
+              </button>
             </form>
           ) : (
-             <form onSubmit={handleMemberLogin} className="space-y-6">
+            <form onSubmit={handleMemberLogin} className="space-y-4">
               <div>
-                <label className="block text-[11px] font-bold uppercase text-slate-500 mb-2 text-center">
-                  Selecione seu nome
-                </label>
-                <select 
+                <label className="block text-[11px] font-bold uppercase text-slate-500 mb-1">Usuário</label>
+                <input
+                  type="text"
                   required
-                  value={selectedMember}
-                  onChange={(e) => setSelectedMember(e.target.value)}
-                  className="w-full px-4 py-2 border border-slate-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-slate-50"
-                >
-                  <option value="" disabled>Escolha um membro...</option>
-                  {members.map(member => (
-                    <option key={member.id} value={member.id}>{member.name}</option>
-                  ))}
-                </select>
+                  value={username}
+                  onChange={e => setUsername(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  placeholder="Seu usuário"
+                />
               </div>
-              <button type="submit" disabled={!selectedMember} className="w-full h-10 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:bg-slate-300 text-white font-bold text-xs uppercase tracking-wider rounded transition-colors">
-                Entrar
+              <div>
+                <label className="block text-[11px] font-bold uppercase text-slate-500 mb-1">Senha</label>
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  placeholder="Sua senha"
+                />
+              </div>
+              <button type="submit" disabled={loading} className="w-full h-10 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-xs uppercase tracking-wider rounded transition-colors">
+                {loading ? 'Entrando...' : 'Entrar'}
               </button>
             </form>
           )}

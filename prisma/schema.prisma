@@ -17,6 +17,8 @@ model Admin {
 model Member {
   id          String    @id
   name        String
+  username    String    @unique
+  password    String
   phone       String    @default("")
   whatsapp    String
   birthDate   String    @default("") @map("birth_date")
@@ -28,6 +30,7 @@ model Member {
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
   payments    Payment[]
+  receipts    PaymentReceipt[]
 
   @@map("members")
 }
@@ -43,8 +46,27 @@ model Payment {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
   member      Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  receipts    PaymentReceipt[]
 
   @@map("payments")
+}
+
+model PaymentReceipt {
+  id          String   @id
+  paymentId   String   @map("payment_id")
+  memberId    String   @map("member_id")
+  description String
+  amount      Float
+  paidAt      String   @map("paid_at")
+  status      String   @default("Pendente") // Pendente, Aprovado, Rejeitado
+  reviewedBy  String?  @map("reviewed_by")
+  reviewedAt  String?  @map("reviewed_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  payment     Payment  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  member      Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@map("payment_receipts")
 }
 
 model Expense {

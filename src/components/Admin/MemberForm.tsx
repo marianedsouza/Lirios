@@ -14,6 +14,8 @@ export function MemberForm({ member, onBack }: MemberFormProps) {
   
   const [formData, setFormData] = useState<Omit<Member, 'id'>>({
     name: member?.name || '',
+    username: member?.username || '',
+    password: member?.password || '',
     phone: member?.phone || '',
     whatsapp: member?.whatsapp || '',
     birthDate: member?.birthDate || '',
@@ -66,6 +68,32 @@ export function MemberForm({ member, onBack }: MemberFormProps) {
               name="name"
               value={formData.name}
               onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Usuário (login) *</label>
+            <input 
+              required
+              type="text" 
+              name="username"
+              value={formData.username}
+              onChange={handleChange}
+              placeholder="Ex: joao.silva"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Senha *</label>
+            <input 
+              required
+              type="password" 
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              placeholder="Senha de acesso"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
             />
           </div>

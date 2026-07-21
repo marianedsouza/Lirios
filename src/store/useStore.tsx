@@ -1,13 +1,14 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import { Member, Payment, PaymentStatus, Expense, AppSettings } from '../types';
+import { Member, Payment, PaymentStatus, Expense, AppSettings, PaymentReceipt } from '../types';
 import { generatePaymentMonth } from '../lib/utils';
-import { membersApi, paymentsApi, expensesApi, settingsApi } from '../lib/api';
+import { membersApi, paymentsApi, expensesApi, settingsApi, receiptsApi } from '../lib/api';
 
 interface AppState {
   members: Member[];
   payments: Payment[];
   expenses: Expense[];
   settings: AppSettings;
+  receipts: PaymentReceipt[];
   loading: boolean;
   addMember: (member: Omit<Member, 'id'>) => Promise<void>;
   updateMember: (id: string, member: Partial<Member>) => Promise<void>;
@@ -17,6 +18,10 @@ interface AppState {
   addExpense: (expense: Omit<Expense, 'id'>) => Promise<void>;
   deleteExpense: (id: string) => Promise<void>;
   updateSettings: (settings: Partial<AppSettings>) => Promise<void>;
+  submitReceipt: (receipt: Omit<PaymentReceipt, 'id' | 'status' | 'reviewedBy' | 'reviewedAt'>) => Promise<void>;
+  approveReceipt: (receiptId: string) => Promise<void>;
+  rejectReceipt: (receiptId: string) => Promise<void>;
+  getMemberReceipts: (memberId: string) => PaymentReceipt[];
 }
 
 const AppContext = createContext<AppState | undefined>(undefined);
@@ -34,22 +39,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
+  const [receipts, setReceipts] = useState<PaymentReceipt[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Load all data from API on mount
   useEffect(() => {
     async function load() {
       try {
-        const [m, p, e, s] = await Promise.all([
+        const [m, p, e, s, r] = await Promise.all([
           membersApi.list(),
           paymentsApi.list(),
           expensesApi.list(),
           settingsApi.get(),
+          receiptsApi.list(),
         ]);
         setMembers(m as Member[]);
         setPayments(p as Payment[]);
         setExpenses(e as Expense[]);
         setSettings(s as AppSettings);
+        setReceipts(r as PaymentReceipt[]);
       } catch (err) {
         console.error('Failed to load data from API:', err);
       } finally {
@@ -153,11 +161,43 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setSettings(updated);
   }, []);
 
+  const submitReceipt = useCallback(async (receiptData: Omit<PaymentReceipt, 'id' | 'status' | 'reviewedBy' | 'reviewedAt'>) => {
+    const created = await receiptsApi.create(receiptData) as PaymentReceipt;
+    setReceipts((prev) => [...prev, created]);
+  }, []);
+
+  const approveReceipt = useCallback(async (receiptId: string) => {
+    const updated = await receiptsApi.approve(receiptId) as PaymentReceipt;
+    setReceipts((prev) => prev.map(r => r.id === receiptId ? updated : r));
+    // Update the related payment status
+    if (updated.paymentId) {
+      const payment = payments.find(p => p.id === updated.paymentId);
+      if (payment) {
+        const payUpdated = await paymentsApi.update(updated.paymentId, {
+          status: 'Pago',
+          method: 'PIX',
+          paymentDate: updated.paidAt,
+        }) as Payment;
+        setPayments((prev) => prev.map(p => p.id === updated.paymentId ? payUpdated : p));
+      }
+    }
+  }, [payments]);
+
+  const rejectReceipt = useCallback(async (receiptId: string) => {
+    const updated = await receiptsApi.reject(receiptId) as PaymentReceipt;
+    setReceipts((prev) => prev.map(r => r.id === receiptId ? updated : r));
+  }, []);
+
+  const getMemberReceipts = useCallback((memberId: string) => {
+    return receipts.filter(r => r.memberId === memberId).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }, [receipts]);
+
   return (
     <AppContext.Provider value={{
-      members, payments, expenses, settings, loading,
+      members, payments, expenses, settings, receipts, loading,
       addMember, updateMember, registerPayment, generateMonthlyPayments,
       getMemberPayments, addExpense, deleteExpense, updateSettings,
+      submitReceipt, approveReceipt, rejectReceipt, getMemberReceipts,
     }}>
       {children}
     </AppContext.Provider>

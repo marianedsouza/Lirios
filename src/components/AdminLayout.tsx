@@ -1,17 +1,18 @@
 import React, { useState } from 'react';
-import { Users, LayoutDashboard, FileText, LogOut, Menu, X, Wallet, Settings as SettingsIcon } from 'lucide-react';
+import { Users, LayoutDashboard, FileText, LogOut, Menu, X, Wallet, Settings as SettingsIcon, CheckSquare } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { Dashboard } from './Admin/Dashboard';
 import { Members } from './Admin/Members';
 import { Reports } from './Admin/Reports';
 import { Caixa } from './Admin/Caixa';
 import { Settings } from './Admin/Settings';
+import { Receipts } from './Admin/Receipts';
 
 interface AdminLayoutProps {
   onLogout: () => void;
 }
 
-type Tab = 'dashboard' | 'members' | 'reports' | 'caixa' | 'settings';
+type Tab = 'dashboard' | 'members' | 'reports' | 'caixa' | 'settings' | 'receipts';
 
 export function AdminLayout({ onLogout }: AdminLayoutProps) {
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
@@ -20,6 +21,7 @@ export function AdminLayout({ onLogout }: AdminLayoutProps) {
   const navigation = [
     { name: 'Painel Geral', id: 'dashboard', icon: LayoutDashboard },
     { name: 'Caixa e Despesas', id: 'caixa', icon: Wallet },
+    { name: 'Comprovantes', id: 'receipts', icon: CheckSquare },
     { name: 'Cadastro de Membros', id: 'members', icon: Users },
     { name: 'Relatórios', id: 'reports', icon: FileText },
     { name: 'Configurações', id: 'settings', icon: SettingsIcon },
@@ -29,6 +31,7 @@ export function AdminLayout({ onLogout }: AdminLayoutProps) {
     switch (activeTab) {
       case 'dashboard': return <Dashboard />;
       case 'caixa': return <Caixa />;
+      case 'receipts': return <Receipts />;
       case 'members': return <Members />;
       case 'reports': return <Reports />;
       case 'settings': return <Settings />;
@@ -40,6 +43,7 @@ export function AdminLayout({ onLogout }: AdminLayoutProps) {
     switch (activeTab) {
       case 'dashboard': return 'Dashboard Administrativo';
       case 'caixa': return 'Controle de Caixa e Despesas';
+      case 'receipts': return 'Validação de Comprovantes';
       case 'members': return 'Cadastro e Controle de Membros';
       case 'reports': return 'Relatórios e Exportações';
       case 'settings': return 'Configurações do Sistema';

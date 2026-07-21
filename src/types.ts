@@ -1,10 +1,13 @@
 export type MemberStatus = 'Ativo' | 'Inativo';
 export type PaymentMethod = 'PIX' | 'Dinheiro' | 'Transferência';
 export type PaymentStatus = 'Pago' | 'Pendente' | 'Atrasado';
+export type ReceiptStatus = 'Pendente' | 'Aprovado' | 'Rejeitado';
 
 export interface Member {
   id: string;
   name: string;
+  username: string;
+  password: string;
   phone: string;
   whatsapp: string;
   birthDate: string; // YYYY-MM-DD
@@ -38,5 +41,17 @@ export interface AppSettings {
   accountName: string;
   defaultMonthlyFee: number;
   houseGuidelines: string;
+}
+
+export interface PaymentReceipt {
+  id: string;
+  paymentId: string;
+  memberId: string;
+  description: string;
+  amount: number;
+  paidAt: string;
+  status: ReceiptStatus;
+  reviewedBy?: string;
+  reviewedAt?: string;
 }
 
