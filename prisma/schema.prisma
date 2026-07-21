@@ -4,7 +4,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
 }
 
 model Admin {
@@ -15,7 +15,7 @@ model Admin {
 }
 
 model Member {
-  id          String    @id
+  id          String    @id @default(cuid())
   name        String
   username    String    @unique
   password    String
@@ -36,7 +36,7 @@ model Member {
 }
 
 model Payment {
-  id          String   @id
+  id          String   @id @default(cuid())
   memberId    String   @map("member_id")
   month       String
   paymentDate String?  @map("payment_date")
@@ -52,13 +52,13 @@ model Payment {
 }
 
 model PaymentReceipt {
-  id          String   @id
+  id          String   @id @default(cuid())
   paymentId   String   @map("payment_id")
   memberId    String   @map("member_id")
   description String
   amount      Float
   paidAt      String   @map("paid_at")
-  status      String   @default("Pendente") // Pendente, Aprovado, Rejeitado
+  status      String   @default("Pendente")
   reviewedBy  String?  @map("reviewed_by")
   reviewedAt  String?  @map("reviewed_at")
   createdAt   DateTime @default(now()) @map("created_at")
@@ -70,7 +70,7 @@ model PaymentReceipt {
 }
 
 model Expense {
-  id          String   @id
+  id          String   @id @default(cuid())
   description String
   amount      Float
   date        String
@@ -81,7 +81,7 @@ model Expense {
 }
 
 model AppSettings {
-  id                String   @id
+  id                String   @id @default(cuid())
   pixKey            String   @default("") @map("pix_key")
   bankName          String   @default("") @map("bank_name")
   accountName       String   @default("") @map("account_name")

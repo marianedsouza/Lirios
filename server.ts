@@ -1,9 +1,22 @@
+import "dotenv/config";
 import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
 import { PrismaClient } from "./src/generated/prisma/client";
+import { PrismaLibSql } from "@prisma/adapter-libsql";
 
-const prisma = new PrismaClient();
+const adapter = new PrismaLibSql({ url: `file:${path.join(process.cwd(), "dev.db")}` });
+const prisma = new PrismaClient({ adapter });
+
+async function seed() {
+  const admin = await prisma.admin.findUnique({ where: { email: "admin@lirios.com" } });
+  if (!admin) {
+    await prisma.admin.create({
+      data: { id: "admin-1", email: "admin@lirios.com", password: "admin123", name: "Administrador" },
+    });
+    console.log("Admin seed created: admin@lirios.com / admin123");
+  }
+}
 
 async function startServer() {
   const app = express();
@@ -289,4 +302,4 @@ async function startServer() {
   });
 }
 
-startServer();
+seed().then(() => startServer());

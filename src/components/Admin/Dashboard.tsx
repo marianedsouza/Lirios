@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAppStore } from '../../store/useStore';
-import { generatePaymentMonth, formatCurrency } from '../../lib/utils';
+import { generatePaymentMonth, formatCurrency, getMonthName } from '../../lib/utils';
 import { BirthdayAlert } from './BirthdayAlert';
 
 export function Dashboard() {
@@ -25,6 +25,13 @@ export function Dashboard() {
       {/* Birthday Alert */}
       <BirthdayAlert />
 
+      {/* Month Label */}
+      <div className="shrink-0">
+        <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-widest">
+          Resumo do Mês: {getMonthName(currentMonth)}
+        </p>
+      </div>
+
       {/* Statistics Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 shrink-0">
         <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
@@ -33,7 +40,7 @@ export function Dashboard() {
           <p className="text-[10px] text-emerald-600 mt-1 font-medium">● {activeMembers} Ativos</p>
         </div>
         <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Pagos (Mês)</p>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Pagos</p>
           <p className="text-2xl font-bold text-emerald-600">{paidPayments.length}</p>
           <div className="w-full bg-slate-100 h-1.5 mt-2 rounded-full">
             <div className="bg-emerald-500 h-1.5 rounded-full" style={{ width: `${progressPercent}%` }}></div>

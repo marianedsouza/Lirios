@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Users, LayoutDashboard, FileText, LogOut, Menu, X, Wallet, Settings as SettingsIcon, CheckSquare } from 'lucide-react';
+import { Users, LayoutDashboard, FileText, LogOut, Menu, X, Wallet, Settings as SettingsIcon, CheckSquare, Bell } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { useAppStore } from '../store/useStore';
 import { Dashboard } from './Admin/Dashboard';
 import { Members } from './Admin/Members';
 import { Reports } from './Admin/Reports';
@@ -17,6 +18,9 @@ type Tab = 'dashboard' | 'members' | 'reports' | 'caixa' | 'settings' | 'receipt
 export function AdminLayout({ onLogout }: AdminLayoutProps) {
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { receipts } = useAppStore();
+  
+  const pendingCount = receipts.filter(r => r.status === 'Pendente').length;
 
   const navigation = [
     { name: 'Painel Geral', id: 'dashboard', icon: LayoutDashboard },
@@ -89,7 +93,10 @@ export function AdminLayout({ onLogout }: AdminLayoutProps) {
                 )}
               >
                 <Icon size={20} />
-                <span className="text-sm font-medium">{item.name}</span>
+                <span className="text-sm font-medium flex-1 text-left">{item.name}</span>
+                {item.id === 'receipts' && pendingCount > 0 && (
+                  <span className="px-1.5 py-0.5 bg-amber-500 text-white text-[9px] font-bold rounded-full">{pendingCount}</span>
+                )}
               </button>
             )
           })}

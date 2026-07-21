@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAppStore } from '../store/useStore';
 import { formatCurrency, getMonthName } from '../lib/utils';
-import { LogOut, Calendar, MessageSquare, CheckCircle, Clock, AlertTriangle, X, QrCode, Copy, BookOpen, Send } from 'lucide-react';
+import { LogOut, Calendar, MessageSquare, CheckCircle, Clock, AlertTriangle, X, QrCode, BookOpen, Send, Copy, Check } from 'lucide-react';
 
 interface MemberPortalProps {
   memberId: string;
@@ -11,11 +11,9 @@ interface MemberPortalProps {
 export function MemberPortal({ memberId, onLogout }: MemberPortalProps) {
   const { members, settings, getMemberPayments, getMemberReceipts, submitReceipt } = useAppStore();
   const [pixPaymentId, setPixPaymentId] = useState<string | null>(null);
-  const [confirmPaymentId, setConfirmPaymentId] = useState<string | null>(null);
-  const [receiptDescription, setReceiptDescription] = useState('');
-  const [receiptPaidAt, setReceiptPaidAt] = useState(new Date().toISOString().split('T')[0]);
-  const [submitting, setSubmitting] = useState(false);
+  const [submitting, setSubmitting] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [pixCopied, setPixCopied] = useState(false);
 
   const member = members.find(m => m.id === memberId);
   const payments = getMemberPayments(memberId);
@@ -33,32 +31,27 @@ export function MemberPortal({ memberId, onLogout }: MemberPortalProps) {
   }
 
   const pendingPayments = payments.filter(p => p.status !== 'Pago');
-  
   const selectedPixPayment = payments.find(p => p.id === pixPaymentId);
-  const selectedConfirmPayment = payments.find(p => p.id === confirmPaymentId);
 
-  const handleSubmitReceipt = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedConfirmPayment || !receiptDescription) return;
+  const handleConfirmPaid = async (paymentId: string) => {
+    const payment = payments.find(p => p.id === paymentId);
+    if (!payment) return;
 
-    setSubmitting(true);
+    setSubmitting(paymentId);
     try {
       await submitReceipt({
-        paymentId: selectedConfirmPayment.id,
+        paymentId: payment.id,
         memberId: member.id,
-        description: receiptDescription,
-        amount: selectedConfirmPayment.amount,
-        paidAt: receiptPaidAt,
+        description: `PIX confirmado pelo membro`,
+        amount: payment.amount,
+        paidAt: new Date().toISOString().split('T')[0],
       });
-      setConfirmPaymentId(null);
-      setReceiptDescription('');
-      setReceiptPaidAt(new Date().toISOString().split('T')[0]);
       setSubmitSuccess(true);
       setTimeout(() => setSubmitSuccess(false), 5000);
     } catch (err) {
-      console.error('Failed to submit receipt:', err);
+      console.error('Failed to confirm payment:', err);
     } finally {
-      setSubmitting(false);
+      setSubmitting(null);
     }
   };
 
@@ -95,74 +88,66 @@ export function MemberPortal({ memberId, onLogout }: MemberPortalProps) {
                 <X size={20} />
               </button>
               <h3 className="text-lg font-bold text-slate-800 mb-1">Pagamento via PIX</h3>
-              <p className="text-xs text-slate-500 mb-6 uppercase tracking-wider font-bold">Mensalidade: {getMonthName(selectedPixPayment.month)}</p>
+              <p className="text-xs text-slate-500 mb-4 uppercase tracking-wider font-bold">Mensalidade: {getMonthName(selectedPixPayment.month)}</p>
               
-              <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 mb-6 flex flex-col items-center w-full">
-                <div className="w-48 h-48 bg-white border border-slate-200 rounded flex items-center justify-center mb-4 relative">
-                  <QrCode size={120} className="text-slate-300" />
-                  <span className="absolute text-[10px] font-bold text-slate-400">QR CODE AQUI</span>
+              <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 mb-4 flex flex-col items-center w-full">
+                {/* QR Code via API */}
+                <div className="w-52 h-52 bg-white border border-slate-200 rounded flex items-center justify-center mb-4 overflow-hidden">
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(settings.pixKey)}`}
+                    alt="QR Code PIX"
+                    className="w-full h-full object-contain"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                      const parent = target.parentElement;
+                      if (parent) {
+                        const fallback = parent.querySelector('.fallback');
+                        if (fallback) (fallback as HTMLElement).style.display = 'flex';
+                      }
+                    }}
+                  />
+                  <div className="fallback hidden w-full h-full items-center justify-center flex-col gap-2">
+                    <QrCode size={60} className="text-slate-300" />
+                    <span className="text-[10px] font-bold text-slate-400">QR Code</span>
+                  </div>
                 </div>
-                <p className="text-2xl font-bold text-emerald-600 mb-2">{formatCurrency(selectedPixPayment.amount)}</p>
-                <div className="text-[10px] text-slate-500 font-mono text-center space-y-1">
-                  <p><strong>Chave PIX:</strong> {settings.pixKey}</p>
-                  <p><strong>Nome:</strong> {settings.accountName}</p>
-                  <p><strong>Banco:</strong> {settings.bankName}</p>
+                <p className="text-2xl font-bold text-emerald-600 mb-3">{formatCurrency(selectedPixPayment.amount)}</p>
+                
+                {/* Chave PIX com botão copiar */}
+                <div className="w-full space-y-2">
+                  <div className="flex items-center justify-between bg-white border border-slate-200 rounded px-3 py-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Chave PIX</p>
+                      <p className="text-sm font-mono font-bold text-slate-800 truncate">{settings.pixKey}</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(settings.pixKey);
+                        setPixCopied(true);
+                        setTimeout(() => setPixCopied(false), 2000);
+                      }}
+                      className="ml-2 p-2 rounded bg-emerald-50 hover:bg-emerald-100 text-emerald-600 transition-colors shrink-0"
+                    >
+                      {pixCopied ? <Check size={14} /> : <Copy size={14} />}
+                    </button>
+                  </div>
+                  <div className="text-[10px] text-slate-500 font-mono text-center space-y-0.5">
+                    <p><strong>Nome:</strong> {settings.accountName}</p>
+                    <p><strong>Banco:</strong> {settings.bankName}</p>
+                  </div>
                 </div>
               </div>
 
-              <p className="text-[10px] text-slate-400 text-center mt-2 italic">Após o pagamento, clique em "Confirmar Pagamento" para enviar seu comprovante.</p>
-            </div>
-          </div>
-        )}
-
-        {/* Confirm Payment Modal */}
-        {confirmPaymentId && selectedConfirmPayment && (
-          <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 relative">
-              <button onClick={() => setConfirmPaymentId(null)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
-                <X size={20} />
+              <button
+                onClick={() => { setPixPaymentId(null); handleConfirmPaid(selectedPixPayment.id); }}
+                disabled={submitting === selectedPixPayment.id}
+                className="w-full px-4 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold uppercase rounded transition-colors flex items-center justify-center gap-2"
+              >
+                <Send size={14} />
+                {submitting === selectedPixPayment.id ? 'Confirmando...' : 'Já paguei'}
               </button>
-              <h3 className="text-lg font-bold text-slate-800 mb-1">Confirmar Pagamento</h3>
-              <p className="text-xs text-slate-500 mb-4 uppercase tracking-wider font-bold">Mensalidade: {getMonthName(selectedConfirmPayment.month)}</p>
-              
-              <form onSubmit={handleSubmitReceipt} className="space-y-4">
-                <div>
-                  <label className="block text-[11px] font-bold uppercase text-slate-500 mb-1">Descrição do Comprovante *</label>
-                  <input
-                    type="text"
-                    required
-                    value={receiptDescription}
-                    onChange={e => setReceiptDescription(e.target.value)}
-                    placeholder="Ex: Transferência Nubank, Código: ABC123"
-                    className="w-full px-3 py-2 border border-slate-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                  />
-                  <p className="text-[10px] text-slate-400 mt-1">Descreva como fez o pagamento (banco, código, etc)</p>
-                </div>
-                <div>
-                  <label className="block text-[11px] font-bold uppercase text-slate-500 mb-1">Data do Pagamento *</label>
-                  <input
-                    type="date"
-                    required
-                    value={receiptPaidAt}
-                    onChange={e => setReceiptPaidAt(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                  />
-                </div>
-                <div className="bg-slate-50 p-3 rounded border border-slate-200">
-                  <p className="text-xs text-slate-600">
-                    <strong>Valor:</strong> {formatCurrency(selectedConfirmPayment.amount)}
-                  </p>
-                </div>
-                <div className="flex space-x-3 pt-2">
-                  <button type="button" onClick={() => setConfirmPaymentId(null)} className="flex-1 px-4 py-2 border border-slate-300 rounded text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors">
-                    Cancelar
-                  </button>
-                  <button type="submit" disabled={submitting} className="flex-1 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold rounded transition-colors flex items-center justify-center gap-2">
-                    <Send size={12} />
-                    {submitting ? 'Enviando...' : 'Enviar Comprovante'}
-                  </button>
-                </div>
-              </form>
+              <p className="text-[10px] text-slate-400 text-center mt-3">Clique depois de realizar o pagamento PIX.</p>
             </div>
           </div>
         )}
@@ -172,9 +157,9 @@ export function MemberPortal({ memberId, onLogout }: MemberPortalProps) {
           <div className="bg-emerald-50 border border-emerald-200 rounded p-4 flex items-start space-x-4 shadow-sm">
             <div className="text-emerald-500 mt-0.5"><CheckCircle size={20} /></div>
             <div>
-              <h3 className="text-sm font-bold text-emerald-900">Comprovante Enviado!</h3>
+              <h3 className="text-sm font-bold text-emerald-900">Pagamento Confirmado!</h3>
               <p className="text-emerald-700 text-xs mt-1">
-                Seu comprovante foi enviado para validação pela diretoria. Aguarde a aprovação.
+                A diretoria foi notificada e irá confirmar o recebimento do PIX.
               </p>
             </div>
           </div>
@@ -270,21 +255,12 @@ export function MemberPortal({ memberId, onLogout }: MemberPortalProps) {
                   <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3 w-full sm:w-auto">
                     <span className="font-bold text-slate-800 text-sm">{formatCurrency(payment.amount)}</span>
                     {payment.status !== 'Pago' && !receipt && (
-                      <>
-                        <button 
-                          onClick={() => setPixPaymentId(payment.id)}
-                          className="text-[10px] font-bold uppercase px-3 py-1.5 bg-slate-800 text-white rounded hover:bg-slate-700 transition-colors shrink-0"
-                        >
-                          Pagar via PIX
-                        </button>
-                        <button 
-                          onClick={() => setConfirmPaymentId(payment.id)}
-                          className="text-[10px] font-bold uppercase px-3 py-1.5 bg-emerald-600 text-white rounded hover:bg-emerald-700 transition-colors shrink-0 flex items-center gap-1"
-                        >
-                          <Send size={10} />
-                          Confirmar
-                        </button>
-                      </>
+                      <button 
+                        onClick={() => setPixPaymentId(payment.id)}
+                        className="text-[10px] font-bold uppercase px-3 py-1.5 bg-emerald-600 text-white rounded hover:bg-emerald-700 transition-colors shrink-0"
+                      >
+                        Pagar via PIX
+                      </button>
                     )}
                   </div>
                 </div>
