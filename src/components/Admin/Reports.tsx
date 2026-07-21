@@ -6,7 +6,7 @@ import { Printer } from 'lucide-react';
 export function Reports() {
   const { members, payments } = useAppStore();
   const [selectedMonth, setSelectedMonth] = useState(generatePaymentMonth(new Date()));
-  const [reportType, setReportType] = useState<'Pagos' | 'Pendentes' | 'Atrasados'>('Pagos');
+  const [reportType, setReportType] = useState<'Pago' | 'Pendente' | 'Atrasado'>('Pago');
 
   const filteredPayments = payments.filter(p => p.month === selectedMonth && p.status === reportType);
   const totalAmount = filteredPayments.reduce((acc, curr) => acc + curr.amount, 0);
@@ -39,17 +39,21 @@ export function Reports() {
             />
           </div>
           <div className="flex space-x-1 bg-slate-100 p-1 rounded">
-            {(['Pagos', 'Pendentes', 'Atrasados'] as const).map(type => (
+            {([
+              { value: 'Pago' as const, label: 'Pagos' },
+              { value: 'Pendente' as const, label: 'Pendentes' },
+              { value: 'Atrasado' as const, label: 'Atrasados' },
+            ]).map(type => (
               <button
-                key={type}
-                onClick={() => setReportType(type)}
+                key={type.value}
+                onClick={() => setReportType(type.value)}
                 className={`px-3 py-1 text-[10px] font-bold uppercase rounded transition-colors ${
-                  reportType === type 
+                  reportType === type.value 
                     ? 'bg-white text-slate-800 shadow-sm' 
                     : 'text-slate-500 hover:text-slate-700'
                 }`}
               >
-                {type}
+                {type.label}
               </button>
             ))}
           </div>
@@ -58,7 +62,7 @@ export function Reports() {
         {/* Report Header - Visible only on print */}
         <div className="hidden print:block text-center pt-8 mb-8 border-b pb-4 shrink-0">
           <h1 className="text-2xl font-bold font-sans">Centro Espírita Lírios do Pântano</h1>
-          <h2 className="text-lg mt-1 font-bold text-slate-600">Relatório de Mensalidades - {reportType.toUpperCase()}</h2>
+          <h2 className="text-lg mt-1 font-bold text-slate-600">Relatório de Mensalidades - {reportType === 'Pago' ? 'Pagos' : reportType === 'Pendente' ? 'Pendentes' : 'Atrasados'}</h2>
           <p className="text-sm text-slate-500 capitalize font-mono mt-2">Mês ref: {getMonthName(selectedMonth)}</p>
         </div>
 
@@ -66,10 +70,10 @@ export function Reports() {
         <div className="flex-1 flex flex-col min-h-0">
           <div className="px-4 py-3 bg-slate-50 border-b border-slate-100 flex justify-between items-center shrink-0">
             <h3 className="text-xs font-bold text-slate-600 uppercase tracking-widest print:hidden">
-              Resultados: {reportType}
+              Resultados: {reportType === 'Pago' ? 'Pagos' : reportType === 'Pendente' ? 'Pendentes' : 'Atrasados'}
             </h3>
             <div className="text-right flex items-center gap-4">
-              <span className="text-[10px] font-bold text-slate-400 uppercase">Total {reportType === 'Pagos' ? 'Arrecadado' : 'a Receber'}</span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase">Total {reportType === 'Pago' ? 'Arrecadado' : 'a Receber'}</span>
               <span className="text-lg font-bold text-emerald-600">{formatCurrency(totalAmount)}</span>
             </div>
           </div>
@@ -80,7 +84,7 @@ export function Reports() {
                 <tr>
                   <th className="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase border-b border-slate-200">Membro</th>
                   <th className="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase border-b border-slate-200">WhatsApp</th>
-                  {reportType === 'Pagos' ? (
+                   {reportType === 'Pago' ? (
                     <>
                       <th className="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase border-b border-slate-200">Data Pgto</th>
                       <th className="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase border-b border-slate-200">Forma</th>
@@ -101,7 +105,7 @@ export function Reports() {
                       <td className="px-4 py-2.5 text-xs font-bold text-slate-800">{member.name}</td>
                       <td className="px-4 py-2.5 text-[10px] text-slate-500 font-mono">{member.whatsapp}</td>
                       
-                      {reportType === 'Pagos' ? (
+                       {reportType === 'Pago' ? (
                         <>
                           <td className="px-4 py-2.5 text-xs text-slate-600 font-mono">{payment.paymentDate?.split('-').reverse().join('/')}</td>
                           <td className="px-4 py-2.5 text-[10px] font-bold text-slate-600 uppercase">{payment.method}</td>

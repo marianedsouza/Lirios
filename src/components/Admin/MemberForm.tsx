@@ -112,6 +112,17 @@ export function MemberForm({ member, onBack }: MemberFormProps) {
           </div>
 
           <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Data de Nascimento</label>
+            <input 
+              type="date" 
+              name="birthDate"
+              value={formData.birthDate}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            />
+          </div>
+
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Situação *</label>
             <select 
               name="status"

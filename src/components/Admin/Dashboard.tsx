@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAppStore } from '../../store/useStore';
 import { generatePaymentMonth, formatCurrency } from '../../lib/utils';
+import { BirthdayAlert } from './BirthdayAlert';
 
 export function Dashboard() {
   const { members, payments } = useAppStore();
@@ -21,6 +22,9 @@ export function Dashboard() {
 
   return (
     <>
+      {/* Birthday Alert */}
+      <BirthdayAlert />
+
       {/* Statistics Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 shrink-0">
         <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">

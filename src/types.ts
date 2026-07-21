@@ -54,5 +54,6 @@ export interface PaymentReceipt {
   status: ReceiptStatus;
   reviewedBy?: string;
   reviewedAt?: string;
+  createdAt?: string;
 }
 
