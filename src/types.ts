@@ -10,7 +10,7 @@ export interface Member {
   password: string;
   phone: string;
   whatsapp: string;
-  birthDate: string; // YYYY-MM-DD
+  birthDate: string; // DD/MM/YYYY
   entryDate: string; // YYYY-MM-DD
   monthlyFee: number;
   dueDate: number; // 1 to 31

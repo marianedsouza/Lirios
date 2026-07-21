@@ -12,7 +12,10 @@ export function BirthdayAlert() {
   const membersWithBirthdays = members
     .filter(m => m.status === 'Ativo' && m.birthDate)
     .map(m => {
-      const [year, month, day] = m.birthDate.split('-').map(Number);
+      const parts = m.birthDate.split('/');
+      if (parts.length !== 3) return null;
+      const [day, month, year] = parts.map(Number);
+      if (!day || !month || !year) return null;
       const age = today.getFullYear() - year;
       return {
         ...m,
@@ -20,7 +23,8 @@ export function BirthdayAlert() {
         birthdayMonth: month - 1,
         age
       };
-    });
+    })
+    .filter(Boolean) as Array<{ birthdayDay: number; birthdayMonth: number; age: number } & typeof members[0]>;
   
   const birthdayThisMonth = membersWithBirthdays
     .filter(m => m.birthdayMonth === currentMonth)
