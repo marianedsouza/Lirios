@@ -31,6 +31,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   bankName: 'Nubank',
   accountName: 'Hugo Daniel Ribeiro Nantes',
   defaultMonthlyFee: 50,
+  defaultDueDate: 10,
   houseGuidelines: '',
 };
 

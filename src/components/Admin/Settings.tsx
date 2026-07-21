@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Settings as SettingsIcon, Building, Save, DollarSign, BookOpen } from 'lucide-react';
+import { Settings as SettingsIcon, Building, Save, DollarSign, BookOpen, Calendar } from 'lucide-react';
 import { useAppStore } from '../../store/useStore';
 import { formatCurrency } from '../../lib/utils';
 
@@ -10,6 +10,7 @@ export function Settings() {
   const [bankName, setBankName] = useState(settings.bankName);
   const [accountName, setAccountName] = useState(settings.accountName);
   const [defaultMonthlyFee, setDefaultMonthlyFee] = useState(settings.defaultMonthlyFee.toString());
+  const [defaultDueDate, setDefaultDueDate] = useState(settings.defaultDueDate.toString());
   const [houseGuidelines, setHouseGuidelines] = useState(settings.houseGuidelines);
   const [saved, setSaved] = useState(false);
 
@@ -18,6 +19,7 @@ export function Settings() {
     setBankName(settings.bankName);
     setAccountName(settings.accountName);
     setDefaultMonthlyFee(settings.defaultMonthlyFee.toString());
+    setDefaultDueDate(settings.defaultDueDate.toString());
     setHouseGuidelines(settings.houseGuidelines);
   }, [settings]);
 
@@ -28,6 +30,7 @@ export function Settings() {
       bankName,
       accountName,
       defaultMonthlyFee: parseFloat(defaultMonthlyFee) || 0,
+      defaultDueDate: parseInt(defaultDueDate) || 10,
       houseGuidelines,
     });
     setSaved(true);
@@ -79,26 +82,39 @@ export function Settings() {
           </div>
         </div>
 
-        {/* Valor da Mensalidade */}
+        {/* Mensalidade e Vencimento */}
         <div className="bg-white border border-slate-200 rounded-lg shadow-sm flex flex-col min-h-0 overflow-hidden shrink-0">
           <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
             <DollarSign className="text-emerald-600" size={20} />
-            <h3 className="text-sm font-bold text-slate-700">Valor da Mensalidade</h3>
+            <h3 className="text-sm font-bold text-slate-700">Mensalidade</h3>
           </div>
           <div className="p-6">
             <div className="space-y-4 max-w-2xl">
-              <div>
-                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Valor Padrão (R$)</label>
-                <input 
-                  type="number" 
-                  step="0.01"
-                  min="0"
-                  value={defaultMonthlyFee}
-                  onChange={e => setDefaultMonthlyFee(e.target.value)}
-                  className="w-full max-w-xs text-xs border border-slate-200 rounded px-3 py-2 bg-slate-50 focus:outline-emerald-500" 
-                />
-                <p className="text-[10px] text-slate-400 mt-1">Este valor será usado como padrão ao cadastrar novos membros.</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Valor Padrão (R$)</label>
+                  <input 
+                    type="number" 
+                    step="0.01"
+                    min="0"
+                    value={defaultMonthlyFee}
+                    onChange={e => setDefaultMonthlyFee(e.target.value)}
+                    className="w-full text-xs border border-slate-200 rounded px-3 py-2 bg-slate-50 focus:outline-emerald-500" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Dia de Vencimento</label>
+                  <input 
+                    type="number" 
+                    min="1"
+                    max="31"
+                    value={defaultDueDate}
+                    onChange={e => setDefaultDueDate(e.target.value)}
+                    className="w-full text-xs border border-slate-200 rounded px-3 py-2 bg-slate-50 focus:outline-emerald-500" 
+                  />
+                </div>
               </div>
+              <p className="text-[10px] text-slate-400">Valor e vencimento padrão para todos os membros.</p>
             </div>
           </div>
         </div>

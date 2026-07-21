@@ -88,6 +88,7 @@ export interface SettingsData {
   bankName: string;
   accountName: string;
   defaultMonthlyFee: number;
+  defaultDueDate: number;
   houseGuidelines: string;
 }
 

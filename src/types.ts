@@ -40,6 +40,7 @@ export interface AppSettings {
   bankName: string;
   accountName: string;
   defaultMonthlyFee: number;
+  defaultDueDate: number;
   houseGuidelines: string;
 }
 

@@ -108,44 +108,19 @@ export function Dashboard() {
         {/* Quick View / Analytics (30%) */}
         <div className="lg:w-1/3 flex flex-col space-y-4 shrink-0">
           <div className="bg-white border border-slate-200 rounded-lg p-4 flex-1 shadow-sm flex flex-col">
-            <h3 className="text-sm font-bold text-slate-600 mb-4">Composição da Receita</h3>
+            <h3 className="text-sm font-bold text-slate-600 mb-4">Volume por Status</h3>
             <div className="space-y-4 flex-1">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-slate-500">Pix</span>
-                <span className="text-xs font-bold text-slate-700">
-                  {formatCurrency(paidPayments.filter(p => p.method === 'PIX').reduce((a,c) => a + c.amount, 0))}
-                </span>
+              <div className="flex h-8 w-full rounded overflow-hidden">
+                <div className="bg-emerald-500" style={{ width: `${(paidPayments.length / Math.max(1, currentMonthPayments.length)) * 100}%` }} title="Pagos"></div>
+                <div className="bg-amber-400" style={{ width: `${(pendingPayments.length / Math.max(1, currentMonthPayments.length)) * 100}%` }} title="Pendentes"></div>
+                <div className="bg-rose-500" style={{ width: `${(delayedPayments.length / Math.max(1, currentMonthPayments.length)) * 100}%` }} title="Atrasados"></div>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-slate-500">Dinheiro</span>
-                <span className="text-xs font-bold text-slate-700">
-                  {formatCurrency(paidPayments.filter(p => p.method === 'Dinheiro').reduce((a,c) => a + c.amount, 0))}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-slate-500">Transferência</span>
-                <span className="text-xs font-bold text-slate-700">
-                  {formatCurrency(paidPayments.filter(p => p.method === 'Transferência').reduce((a,c) => a + c.amount, 0))}
-                </span>
-              </div>
-              
-              <div className="pt-2 border-t border-slate-50 mt-auto pt-4">
-                <p className="text-[10px] text-slate-400 uppercase font-bold mb-2">Volume por Status</p>
-                <div className="flex h-8 w-full rounded overflow-hidden">
-                  <div className="bg-emerald-500" style={{ width: `${(paidPayments.length / Math.max(1, currentMonthPayments.length)) * 100}%` }} title="Pagos"></div>
-                  <div className="bg-amber-400" style={{ width: `${(pendingPayments.length / Math.max(1, currentMonthPayments.length)) * 100}%` }} title="Pendentes"></div>
-                  <div className="bg-rose-500" style={{ width: `${(delayedPayments.length / Math.max(1, currentMonthPayments.length)) * 100}%` }} title="Atrasados"></div>
-                </div>
+              <div className="flex justify-between text-[10px] text-slate-500">
+                <span className="flex items-center gap-1"><span className="w-2 h-2 bg-emerald-500 rounded-full inline-block"></span> Pagos</span>
+                <span className="flex items-center gap-1"><span className="w-2 h-2 bg-amber-400 rounded-full inline-block"></span> Pendentes</span>
+                <span className="flex items-center gap-1"><span className="w-2 h-2 bg-rose-500 rounded-full inline-block"></span> Atrasados</span>
               </div>
             </div>
-          </div>
-          
-          <div className="bg-emerald-800 text-white border border-emerald-900 rounded-lg p-4 shadow-lg shrink-0">
-            <h3 className="text-xs font-bold uppercase tracking-widest text-emerald-300 mb-2">Área do Membro</h3>
-            <p className="text-[11px] text-emerald-100 mb-4">Dê acesso aos membros para consultarem seu histórico e gerarem comprovantes.</p>
-            <button className="w-full py-2 bg-emerald-500 hover:bg-emerald-400 text-white text-xs font-bold rounded transition-colors" onClick={() => alert('A área do membro está disponível na tela inicial!')}>
-              VER INSTRUÇÕES
-            </button>
           </div>
         </div>
       </div>

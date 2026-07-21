@@ -10,20 +10,20 @@ interface MemberFormProps {
 }
 
 export function MemberForm({ member, onBack }: MemberFormProps) {
-  const { addMember, updateMember } = useAppStore();
+  const { addMember, updateMember, settings } = useAppStore();
   
   const [formData, setFormData] = useState<Omit<Member, 'id'>>({
     name: member?.name || '',
     username: member?.username || '',
     password: member?.password || '',
-    phone: member?.phone || '',
+    phone: '',
     whatsapp: member?.whatsapp || '',
-    birthDate: member?.birthDate || '',
-    entryDate: member?.entryDate || new Date().toISOString().split('T')[0],
-    monthlyFee: member?.monthlyFee || 50,
-    dueDate: member?.dueDate || 10,
+    birthDate: '',
+    entryDate: new Date().toISOString().split('T')[0],
+    monthlyFee: settings.defaultMonthlyFee,
+    dueDate: settings.defaultDueDate,
     status: member?.status || 'Ativo',
-    observations: member?.observations || '',
+    observations: '',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -40,7 +40,7 @@ export function MemberForm({ member, onBack }: MemberFormProps) {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'monthlyFee' || name === 'dueDate' ? Number(value) : value
+      [name]: value
     }));
   };
 
@@ -99,18 +99,6 @@ export function MemberForm({ member, onBack }: MemberFormProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Telefone</label>
-            <input 
-              type="text" 
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              placeholder="(00) 00000-0000"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
-            />
-          </div>
-
-          <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">WhatsApp *</label>
             <input 
               required
@@ -119,57 +107,6 @@ export function MemberForm({ member, onBack }: MemberFormProps) {
               value={formData.whatsapp}
               onChange={handleChange}
               placeholder="(00) 00000-0000"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Data de Nascimento</label>
-            <input 
-              type="date" 
-              name="birthDate"
-              value={formData.birthDate}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Data de Ingresso *</label>
-            <input 
-              required
-              type="date" 
-              name="entryDate"
-              value={formData.entryDate}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Valor da Mensalidade (R$) *</label>
-            <input 
-              required
-              type="number" 
-              min="0"
-              step="0.01"
-              name="monthlyFee"
-              value={formData.monthlyFee}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Dia de Vencimento *</label>
-            <input 
-              required
-              type="number" 
-              min="1"
-              max="31"
-              name="dueDate"
-              value={formData.dueDate}
-              onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
             />
           </div>
@@ -186,17 +123,13 @@ export function MemberForm({ member, onBack }: MemberFormProps) {
               <option value="Inativo">Inativo</option>
             </select>
           </div>
-          
-          <div className="col-span-1 md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Observações</label>
-            <textarea 
-              name="observations"
-              value={formData.observations}
-              onChange={handleChange}
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
-            />
-          </div>
+        </div>
+
+        <div className="bg-slate-50 border border-slate-200 rounded-md p-4">
+          <p className="text-xs text-slate-500">
+            <strong>Mensalidade:</strong> R$ {settings.defaultMonthlyFee.toFixed(2)} | <strong>Vencimento:</strong> Dia {settings.defaultDueDate}
+          </p>
+          <p className="text-[10px] text-slate-400 mt-1">Valores definidos em Configurações. Para alterar, acesse Configurações.</p>
         </div>
 
         <div className="flex justify-end space-x-3 pt-4 border-t border-gray-100">
