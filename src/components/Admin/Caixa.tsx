@@ -14,11 +14,11 @@ export function Caixa() {
   const totalDespesas = expenses.reduce((acc, curr) => acc + curr.amount, 0);
   const saldoAtual = totalReceitas - totalDespesas;
 
-  const handleAddExpense = (e: React.FormEvent) => {
+  const handleAddExpense = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newExpense.description || !newExpense.amount || !newExpense.date) return;
     
-    addExpense({
+    await addExpense({
       description: newExpense.description,
       amount: parseFloat(newExpense.amount),
       date: newExpense.date

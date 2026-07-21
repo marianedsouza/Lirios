@@ -19,10 +19,10 @@ export function MemberDetails({ member, onBack }: MemberDetailsProps) {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('PIX');
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
 
-  const handleRegisterPayment = (e: React.FormEvent) => {
+  const handleRegisterPayment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (selectedPayment) {
-      registerPayment(selectedPayment.id, paymentMethod, paymentDate);
+      await registerPayment(selectedPayment.id, paymentMethod, paymentDate);
       setSelectedPayment(null);
     }
   };

@@ -1,52 +1,27 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { Member, Payment, PaymentStatus, Expense, AppSettings } from '../types';
 import { generatePaymentMonth } from '../lib/utils';
+import { membersApi, paymentsApi, expensesApi, settingsApi } from '../lib/api';
 
 interface AppState {
   members: Member[];
   payments: Payment[];
   expenses: Expense[];
   settings: AppSettings;
-  addMember: (member: Omit<Member, 'id'>) => void;
-  updateMember: (id: string, member: Partial<Member>) => void;
-  registerPayment: (paymentId: string, method: Payment['method'], date: string) => void;
-  generateMonthlyPayments: () => void;
+  loading: boolean;
+  addMember: (member: Omit<Member, 'id'>) => Promise<void>;
+  updateMember: (id: string, member: Partial<Member>) => Promise<void>;
+  registerPayment: (paymentId: string, method: Payment['method'], date: string) => Promise<void>;
+  generateMonthlyPayments: () => Promise<void>;
   getMemberPayments: (memberId: string) => Payment[];
-  addExpense: (expense: Omit<Expense, 'id'>) => void;
-  deleteExpense: (id: string) => void;
-  updateSettings: (settings: Partial<AppSettings>) => void;
+  addExpense: (expense: Omit<Expense, 'id'>) => Promise<void>;
+  deleteExpense: (id: string) => Promise<void>;
+  updateSettings: (settings: Partial<AppSettings>) => Promise<void>;
 }
 
 const AppContext = createContext<AppState | undefined>(undefined);
 
-const INITIAL_MEMBERS: Member[] = [
-  {
-    id: 'm1',
-    name: 'João Silva',
-    phone: '(11) 98765-4321',
-    whatsapp: '(11) 98765-4321',
-    birthDate: '1980-05-15',
-    entryDate: '2023-01-10',
-    monthlyFee: 50,
-    dueDate: 10,
-    status: 'Ativo',
-    observations: 'Colaborador das palestras',
-  },
-  {
-    id: 'm2',
-    name: 'Maria Oliveira',
-    phone: '(11) 91234-5678',
-    whatsapp: '(11) 91234-5678',
-    birthDate: '1992-08-22',
-    entryDate: '2023-03-05',
-    monthlyFee: 50,
-    dueDate: 5,
-    status: 'Ativo',
-    observations: '',
-  }
-];
-
-const INITIAL_SETTINGS: AppSettings = {
+const DEFAULT_SETTINGS: AppSettings = {
   pixKey: '55292931829',
   bankName: 'Nubank',
   accountName: 'Hugo Daniel Ribeiro Nantes',
@@ -55,127 +30,135 @@ const INITIAL_SETTINGS: AppSettings = {
 };
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [members, setMembers] = useState<Member[]>(() => {
-    const saved = localStorage.getItem('celp_members');
-    return saved ? JSON.parse(saved) : INITIAL_MEMBERS;
-  });
+  const [members, setMembers] = useState<Member[]>([]);
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
+  const [loading, setLoading] = useState(true);
 
-  const [payments, setPayments] = useState<Payment[]>(() => {
-    const saved = localStorage.getItem('celp_payments');
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  const [expenses, setExpenses] = useState<Expense[]>(() => {
-    const saved = localStorage.getItem('celp_expenses');
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  const [settings, setSettings] = useState<AppSettings>(() => {
-    const saved = localStorage.getItem('celp_settings');
-    return saved ? JSON.parse(saved) : INITIAL_SETTINGS;
-  });
-
+  // Load all data from API on mount
   useEffect(() => {
-    localStorage.setItem('celp_members', JSON.stringify(members));
-  }, [members]);
+    async function load() {
+      try {
+        const [m, p, e, s] = await Promise.all([
+          membersApi.list(),
+          paymentsApi.list(),
+          expensesApi.list(),
+          settingsApi.get(),
+        ]);
+        setMembers(m as Member[]);
+        setPayments(p as Payment[]);
+        setExpenses(e as Expense[]);
+        setSettings(s as AppSettings);
+      } catch (err) {
+        console.error('Failed to load data from API:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
 
-  useEffect(() => {
-    localStorage.setItem('celp_payments', JSON.stringify(payments));
-  }, [payments]);
+  const addMember = useCallback(async (memberData: Omit<Member, 'id'>) => {
+    const created = await membersApi.create(memberData) as Member;
+    setMembers((prev) => [...prev, created]);
+  }, []);
 
-  useEffect(() => {
-    localStorage.setItem('celp_expenses', JSON.stringify(expenses));
-  }, [expenses]);
+  const updateMember = useCallback(async (id: string, updates: Partial<Member>) => {
+    const updated = await membersApi.update(id, updates) as Member;
+    setMembers((prev) => prev.map((m) => (m.id === id ? updated : m)));
+  }, []);
 
-  useEffect(() => {
-    localStorage.setItem('celp_settings', JSON.stringify(settings));
-  }, [settings]);
+  const registerPayment = useCallback(async (paymentId: string, method: Payment['method'], date: string) => {
+    const updated = await paymentsApi.update(paymentId, {
+      status: 'Pago',
+      method: method as string,
+      paymentDate: date,
+    }) as Payment;
+    setPayments((prev) => prev.map((p) => (p.id === paymentId ? updated : p)));
+  }, []);
 
-  const addExpense = (expenseData: Omit<Expense, 'id'>) => {
-    const newExpense: Expense = {
-      ...expenseData,
-      id: crypto.randomUUID(),
-    };
-    setExpenses((prev) => [...prev, newExpense]);
-  };
-
-  const deleteExpense = (id: string) => {
-    setExpenses((prev) => prev.filter(e => e.id !== id));
-  };
-
-  const addMember = (memberData: Omit<Member, 'id'>) => {
-    const newMember: Member = {
-      ...memberData,
-      id: crypto.randomUUID(),
-    };
-    setMembers((prev) => [...prev, newMember]);
-  };
-
-  const updateMember = (id: string, updates: Partial<Member>) => {
-    setMembers((prev) =>
-      prev.map((m) => (m.id === id ? { ...m, ...updates } : m))
-    );
-  };
-
-  const registerPayment = (paymentId: string, method: Payment['method'], date: string) => {
-    setPayments((prev) =>
-      prev.map((p) =>
-        p.id === paymentId
-          ? { ...p, status: 'Pago', method, paymentDate: date }
-          : p
-      )
-    );
-  };
-
-  // Function to generate pending payments for the current month for all active members
-  const generateMonthlyPayments = () => {
+  const generateMonthlyPayments = useCallback(async () => {
     const currentMonth = generatePaymentMonth(new Date());
     const today = new Date();
-    
-    setPayments((prev) => {
-      const newPayments = [...prev];
-      members.filter(m => m.status === 'Ativo').forEach(member => {
-        const existingPayment = newPayments.find(p => p.memberId === member.id && p.month === currentMonth);
-        if (!existingPayment) {
-          // Check if due date has passed
-          let status: PaymentStatus = 'Pendente';
-          if (today.getDate() > member.dueDate) {
-            status = 'Atrasado';
-          }
-          
-          newPayments.push({
-            id: crypto.randomUUID(),
-            memberId: member.id,
-            month: currentMonth,
-            paymentDate: null,
-            amount: member.monthlyFee,
-            method: null,
-            status
-          });
-        } else if (existingPayment.status === 'Pendente' && today.getDate() > member.dueDate) {
-           existingPayment.status = 'Atrasado';
+
+    const newPayments: Payment[] = [];
+    const updates: { id: string; status: string }[] = [];
+
+    members.filter(m => m.status === 'Ativo').forEach(member => {
+      const existingPayment = payments.find(p => p.memberId === member.id && p.month === currentMonth);
+      if (!existingPayment) {
+        let status: PaymentStatus = 'Pendente';
+        if (today.getDate() > member.dueDate) {
+          status = 'Atrasado';
         }
-      });
-      return newPayments;
+        newPayments.push({
+          id: crypto.randomUUID(),
+          memberId: member.id,
+          month: currentMonth,
+          paymentDate: null,
+          amount: member.monthlyFee,
+          method: null,
+          status,
+        });
+      } else if (existingPayment.status === 'Pendente' && today.getDate() > member.dueDate) {
+        updates.push({ id: existingPayment.id, status: 'Atrasado' });
+      }
     });
-  };
 
-  // Run on mount to ensure current month payments exist
+    // Persist new payments
+    for (const np of newPayments) {
+      try {
+        const created = await paymentsApi.create(np) as Payment;
+        setPayments((prev) => [...prev, created]);
+      } catch (e) {
+        console.error('Failed to create payment:', e);
+      }
+    }
+
+    // Persist status updates
+    for (const u of updates) {
+      try {
+        await paymentsApi.update(u.id, { status: u.status });
+        setPayments((prev) => prev.map(p => p.id === u.id ? { ...p, status: u.status as PaymentStatus } : p));
+      } catch (e) {
+        console.error('Failed to update payment:', e);
+      }
+    }
+  }, [members, payments]);
+
   useEffect(() => {
-    generateMonthlyPayments();
+    if (!loading && members.length > 0) {
+      generateMonthlyPayments();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [members]);
+  }, [loading, members]);
 
-  const getMemberPayments = (memberId: string) => {
+  const getMemberPayments = useCallback((memberId: string) => {
     return payments.filter(p => p.memberId === memberId).sort((a, b) => b.month.localeCompare(a.month));
-  };
+  }, [payments]);
 
-  const updateSettings = (updates: Partial<AppSettings>) => {
-    setSettings((prev) => ({ ...prev, ...updates }));
-  };
+  const addExpense = useCallback(async (expenseData: Omit<Expense, 'id'>) => {
+    const created = await expensesApi.create(expenseData) as Expense;
+    setExpenses((prev) => [...prev, created]);
+  }, []);
+
+  const deleteExpense = useCallback(async (id: string) => {
+    await expensesApi.remove(id);
+    setExpenses((prev) => prev.filter(e => e.id !== id));
+  }, []);
+
+  const updateSettings = useCallback(async (updates: Partial<AppSettings>) => {
+    const updated = await settingsApi.update(updates) as AppSettings;
+    setSettings(updated);
+  }, []);
 
   return (
-    <AppContext.Provider value={{ members, payments, expenses, settings, addMember, updateMember, registerPayment, generateMonthlyPayments, getMemberPayments, addExpense, deleteExpense, updateSettings }}>
+    <AppContext.Provider value={{
+      members, payments, expenses, settings, loading,
+      addMember, updateMember, registerPayment, generateMonthlyPayments,
+      getMemberPayments, addExpense, deleteExpense, updateSettings,
+    }}>
       {children}
     </AppContext.Provider>
   );

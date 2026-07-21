@@ -21,9 +21,9 @@ export function Settings() {
     setHouseGuidelines(settings.houseGuidelines);
   }, [settings]);
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateSettings({
+    await updateSettings({
       pixKey,
       bankName,
       accountName,

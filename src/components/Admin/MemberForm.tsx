@@ -24,12 +24,12 @@ export function MemberForm({ member, onBack }: MemberFormProps) {
     observations: member?.observations || '',
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (member) {
-      updateMember(member.id, formData);
+      await updateMember(member.id, formData);
     } else {
-      addMember(formData);
+      await addMember(formData);
     }
     onBack();
   };

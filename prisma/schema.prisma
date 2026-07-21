@@ -1,0 +1,72 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Admin {
+  id       String @id
+  email    String @unique
+  password String
+  name     String
+}
+
+model Member {
+  id          String    @id
+  name        String
+  phone       String    @default("")
+  whatsapp    String
+  birthDate   String    @default("") @map("birth_date")
+  entryDate   String    @default("") @map("entry_date")
+  monthlyFee  Float
+  dueDate     Int       @map("due_date")
+  status      String    @default("Ativo")
+  observations String   @default("")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  payments    Payment[]
+
+  @@map("members")
+}
+
+model Payment {
+  id          String   @id
+  memberId    String   @map("member_id")
+  month       String
+  paymentDate String?  @map("payment_date")
+  amount      Float
+  method      String?
+  status      String
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  member      Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+model Expense {
+  id          String   @id
+  description String
+  amount      Float
+  date        String
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("expenses")
+}
+
+model AppSettings {
+  id                String   @id
+  pixKey            String   @default("") @map("pix_key")
+  bankName          String   @default("") @map("bank_name")
+  accountName       String   @default("") @map("account_name")
+  defaultMonthlyFee Float    @default(50) @map("default_monthly_fee")
+  houseGuidelines   String   @default("") @map("house_guidelines")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@map("app_settings")
+}
