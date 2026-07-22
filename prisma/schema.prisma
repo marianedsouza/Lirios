@@ -9,7 +9,7 @@ datasource db {
 
 model Admin {
   id       String @id
-  email    String @unique
+  username String @unique
   password String
   name     String
 }

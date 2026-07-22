@@ -8,7 +8,6 @@ interface LoginProps {
 
 export function Login({ onLogin }: LoginProps) {
   const [activeTab, setActiveTab] = useState<'admin' | 'member'>('admin');
-  const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -19,7 +18,7 @@ export function Login({ onLogin }: LoginProps) {
     setError('');
     setLoading(true);
     try {
-      await authApi.admin(email, password);
+      await authApi.admin(username, password);
       onLogin('admin');
     } catch (err: any) {
       setError(err.message || 'Credenciais inválidas');
@@ -89,14 +88,14 @@ export function Login({ onLogin }: LoginProps) {
           {activeTab === 'admin' ? (
             <form onSubmit={handleAdminLogin} className="space-y-4">
               <div>
-                <label className="block text-[11px] font-bold uppercase text-slate-500 mb-1">E-mail</label>
+                <label className="block text-[11px] font-bold uppercase text-slate-500 mb-1">Usuário</label>
                 <input
-                  type="email"
+                  type="text"
                   required
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
+                  value={username}
+                  onChange={e => setUsername(e.target.value)}
                   className="w-full px-3 py-2 border border-slate-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                  placeholder="admin@exemplo.com"
+                  placeholder="Seu usuário"
                 />
               </div>
               <div>

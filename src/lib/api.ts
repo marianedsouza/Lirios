@@ -14,10 +14,10 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 
 // ─── Auth ──────────────────────────────────────────────────
 export const authApi = {
-  admin: (email: string, password: string) =>
-    request<{ id: string; name: string; email: string }>('/auth/admin', {
+  admin: (username: string, password: string) =>
+    request<{ id: string; name: string; username: string }>('/auth/admin', {
       method: 'POST',
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ username, password }),
     }),
   member: (username: string, password: string) =>
     request<{ id: string; name: string }>('/auth/member', {

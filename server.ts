@@ -9,12 +9,12 @@ const adapter = new PrismaLibSql({ url: `file:${path.join(process.cwd(), "dev.db
 const prisma = new PrismaClient({ adapter });
 
 async function seed() {
-  const admin = await prisma.admin.findUnique({ where: { email: "admin@lirios.com" } });
+  const admin = await prisma.admin.findUnique({ where: { username: "admin" } });
   if (!admin) {
     await prisma.admin.create({
-      data: { id: "admin-1", email: "admin@lirios.com", password: "admin123", name: "Administrador" },
+      data: { id: "admin-1", username: "admin", password: "admin123", name: "Administrador" },
     });
-    console.log("Admin seed created: admin@lirios.com / admin123");
+    console.log("Admin seed created: admin / admin123");
   }
 }
 
@@ -32,12 +32,12 @@ async function startServer() {
   // ─── Auth ──────────────────────────────────────────────────
   app.post("/api/auth/admin", async (req, res) => {
     try {
-      const { email, password } = req.body;
-      const admin = await prisma.admin.findUnique({ where: { email } });
+      const { username, password } = req.body;
+      const admin = await prisma.admin.findUnique({ where: { username } });
       if (!admin || admin.password !== password) {
         return res.status(401).json({ error: "Credenciais inválidas" });
       }
-      res.json({ id: admin.id, name: admin.name, email: admin.email });
+      res.json({ id: admin.id, name: admin.name, username: admin.username });
     } catch (e: any) {
       res.status(500).json({ error: e.message });
     }
