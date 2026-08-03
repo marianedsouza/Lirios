@@ -4,7 +4,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
 }
 
 model Admin {
@@ -23,7 +23,7 @@ model Member {
   whatsapp    String
   birthDate   String    @default("") @map("birth_date")
   entryDate   String    @default("") @map("entry_date")
-  monthlyFee  Float
+  monthlyFee  Float     @map("monthly_fee")
   dueDate     Int       @map("due_date")
   status      String    @default("Ativo")
   observations String   @default("")

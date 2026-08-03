@@ -10,6 +10,6 @@ export default defineConfig({
     path: "prisma/migrations",
   },
   datasource: {
-    url: `file:${path.join(process.cwd(), "dev.db")}`,
+    url: process.env.DATABASE_URL || `file:${path.join(process.cwd(), "dev.db")}`,
   },
 });
