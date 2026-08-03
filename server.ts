@@ -2,7 +2,9 @@ import express from "express";
 import { PrismaClient } from "./src/generated/prisma/client";
 import { MercadoPagoConfig, Preference, Payment as MPPayment } from "mercadopago";
 
-const databaseUrl = process.env.POSTGRES_URL || process.env.DATABASE_URL || process.env.PRISMA_DATABASE_URL || "postgresql://neondb_owner:npg_ydW9Mas7jpBF@ep-rapid-snow-acwwgkt8-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require";
+// Removemos qualquer leitura de PRISMA_DATABASE_URL para forçar a usar a Neon,
+// mesmo que o Vercel tenha variáveis velhas do Prisma Accelerate configuradas.
+const databaseUrl = process.env.POSTGRES_URL || process.env.DATABASE_URL || "postgresql://neondb_owner:npg_ydW9Mas7jpBF@ep-rapid-snow-acwwgkt8-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require";
 
 const prisma = databaseUrl ? new PrismaClient({
   datasources: {
