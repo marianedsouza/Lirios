@@ -4,7 +4,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 import { MercadoPagoConfig, Preference, Payment as MPPayment } from "mercadopago";
 
-const databaseUrl = process.env.POSTGRES_URL || process.env.DATABASE_URL;
+const databaseUrl = process.env.POSTGRES_URL || process.env.DATABASE_URL || "postgresql://neondb_owner:npg_ydW9Mas7jpBF@ep-rapid-snow-acwwgkt8-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require";
 
 let adapter: PrismaPg | undefined;
 if (databaseUrl) {
