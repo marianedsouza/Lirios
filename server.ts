@@ -47,13 +47,12 @@ async function initDatabase() {
 }
 
 async function seed() {
-  const admin = await prisma.admin.findUnique({ where: { username: "admin" } });
-  if (!admin) {
-    await prisma.admin.create({
-      data: { id: "admin-1", username: "admin", password: "admin123", name: "Administrador" },
-    });
-    console.log("Admin seed created: admin / admin123");
-  }
+  await prisma.admin.upsert({
+    where: { username: "admin" },
+    update: { password: "admin123", name: "Administrador" },
+    create: { id: "admin-1", username: "admin", password: "admin123", name: "Administrador" },
+  });
+  console.log("Admin garantido: admin / admin123");
 }
 
 async function startServer() {
@@ -63,8 +62,13 @@ async function startServer() {
   app.use(express.json());
 
   // Health check
-  app.get("/api/health", (_req, res) => {
-    res.json({ status: "ok" });
+  app.get("/api/health", async (_req, res) => {
+    try {
+      const adminCount = await prisma.admin.count();
+      res.json({ status: "ok", db: "postgres", adminCount, connected: true });
+    } catch (e: any) {
+      res.status(500).json({ status: "error", db: "postgres", connected: false, error: e.message });
+    }
   });
 
   // ─── Auth ──────────────────────────────────────────────────
