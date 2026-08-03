@@ -1,16 +1,21 @@
 import express from "express";
 import { PrismaClient } from "./src/generated/prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 import { MercadoPagoConfig, Preference, Payment as MPPayment } from "mercadopago";
 
 // Removemos qualquer leitura de PRISMA_DATABASE_URL para forçar a usar a Neon,
 // mesmo que o Vercel tenha variáveis velhas do Prisma Accelerate configuradas.
 const databaseUrl = process.env.POSTGRES_URL || process.env.DATABASE_URL || "postgresql://neondb_owner:npg_ydW9Mas7jpBF@ep-rapid-snow-acwwgkt8-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require";
 
-const prisma = databaseUrl ? new PrismaClient({
-  datasources: {
-    db: { url: databaseUrl }
-  }
-} as any) : null;
+let adapter: PrismaPg | undefined;
+if (databaseUrl) {
+  adapter = new PrismaPg({
+    connectionString: databaseUrl,
+    ssl: { rejectUnauthorized: false }
+  } as any);
+}
+
+const prisma = databaseUrl ? new PrismaClient({ adapter } as any) : null;
 
 if (!prisma) {
   console.error("DATABASE_URL não configurada. Defina a URL do banco PostgreSQL no .env");
