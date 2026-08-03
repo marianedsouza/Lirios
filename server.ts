@@ -1,12 +1,10 @@
 import express from "express";
 import { PrismaClient } from "./src/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { Pool } from "pg";
 import { MercadoPagoConfig, Preference, Payment as MPPayment } from "mercadopago";
 
 const databaseUrl = process.env.DATABASE_URL;
-const pool = databaseUrl ? new Pool({ connectionString: databaseUrl }) : undefined;
-const adapter = pool ? new PrismaPg(pool) : undefined;
+const adapter = databaseUrl ? new PrismaPg(databaseUrl) : undefined;
 const prisma = databaseUrl ? new PrismaClient({ adapter } as any) : null;
 
 if (!prisma) {
@@ -57,15 +55,6 @@ async function seed() {
 
 export const app = express();
 
-// Protect against Vercel serverless already parsing the body
-app.use((req, res, next) => {
-  if (req.body && Object.keys(req.body).length > 0) {
-    next();
-  } else {
-    express.json()(req, res, next);
-  }
-});
-
 // Health check
 app.get("/api/health", async (_req, res) => {
   if (!prisma) {
@@ -82,20 +71,19 @@ app.get("/api/health", async (_req, res) => {
 // ─── Auth ──────────────────────────────────────────────────
 app.post("/api/auth/admin", async (req, res) => {
   try {
-    const username = req.body.username?.trim();
-    const password = req.body.password?.trim();
+    const username = (req.body.username || "").trim();
+    const password = (req.body.password || "").trim();
     
     if (!username || !password) {
       return res.status(401).json({ error: "Credenciais inválidas" });
     }
 
-    const admin = await prisma!.admin.findFirst({ 
-      where: { username: { equals: username, mode: "insensitive" } } 
-    });
+    const admins = await prisma!.admin.findMany();
+    const admin = admins.find(a => a.username.toLowerCase() === username.toLowerCase());
     
     if (!admin || admin.password !== password) {
       return res.status(401).json({ 
-        error: `Credenciais inválidas (Debug: admin=${!!admin}, req_pwd=${password}, db_pwd=${admin?.password})` 
+        error: `Credenciais inválidas (Debug: found=${!!admin}, db_pass=${admin?.password}, req_pass=${password})`
       });
     }
     res.json({ id: admin.id, name: admin.name, username: admin.username });
@@ -106,16 +94,16 @@ app.post("/api/auth/admin", async (req, res) => {
 
 app.post("/api/auth/member", async (req, res) => {
   try {
-    const username = req.body.username?.trim();
-    const password = req.body.password?.trim();
+    const username = (req.body.username || "").trim();
+    const password = (req.body.password || "").trim();
 
     if (!username || !password) {
       return res.status(401).json({ error: "Credenciais inválidas" });
     }
 
-    const member = await prisma!.member.findFirst({ 
-      where: { username: { equals: username, mode: "insensitive" } } 
-    });
+    const members = await prisma!.member.findMany();
+    const member = members.find(m => m.username.toLowerCase() === username.toLowerCase());
+    
     if (!member || member.password !== password) {
       return res.status(401).json({ error: "Credenciais inválidas" });
     }
