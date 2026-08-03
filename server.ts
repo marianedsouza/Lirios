@@ -1,11 +1,13 @@
 import express from "express";
 import { PrismaClient } from "./src/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { Pool } from "pg";
 import { MercadoPagoConfig, Preference, Payment as MPPayment } from "mercadopago";
 
 const databaseUrl = process.env.DATABASE_URL;
-const adapter = databaseUrl ? new PrismaPg(databaseUrl) : undefined;
-const prisma = databaseUrl ? new PrismaClient({ adapter }) : null;
+const pool = databaseUrl ? new Pool({ connectionString: databaseUrl }) : undefined;
+const adapter = pool ? new PrismaPg(pool) : undefined;
+const prisma = databaseUrl ? new PrismaClient({ adapter } as any) : null;
 
 if (!prisma) {
   console.error("DATABASE_URL não configurada. Defina a URL do banco PostgreSQL no .env");
@@ -73,8 +75,17 @@ app.get("/api/health", async (_req, res) => {
 // ─── Auth ──────────────────────────────────────────────────
 app.post("/api/auth/admin", async (req, res) => {
   try {
-    const { username, password } = req.body;
-    const admin = await prisma!.admin.findUnique({ where: { username } });
+    const username = req.body.username?.trim();
+    const password = req.body.password?.trim();
+    
+    if (!username || !password) {
+      return res.status(401).json({ error: "Credenciais inválidas" });
+    }
+
+    const admin = await prisma!.admin.findFirst({ 
+      where: { username: { equals: username, mode: "insensitive" } } 
+    });
+    
     if (!admin || admin.password !== password) {
       return res.status(401).json({ error: "Credenciais inválidas" });
     }
@@ -86,8 +97,16 @@ app.post("/api/auth/admin", async (req, res) => {
 
 app.post("/api/auth/member", async (req, res) => {
   try {
-    const { username, password } = req.body;
-    const member = await prisma!.member.findFirst({ where: { username } });
+    const username = req.body.username?.trim();
+    const password = req.body.password?.trim();
+
+    if (!username || !password) {
+      return res.status(401).json({ error: "Credenciais inválidas" });
+    }
+
+    const member = await prisma!.member.findFirst({ 
+      where: { username: { equals: username, mode: "insensitive" } } 
+    });
     if (!member || member.password !== password) {
       return res.status(401).json({ error: "Credenciais inválidas" });
     }
