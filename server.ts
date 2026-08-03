@@ -4,6 +4,7 @@ import path from "path";
 import { createServer as createViteServer } from "vite";
 import { PrismaClient } from "./src/generated/prisma/client";
 import { PrismaLibSql } from "@prisma/adapter-libsql";
+import { MercadoPagoConfig, Preference, Payment as MPPayment } from "mercadopago";
 
 const adapter = new PrismaLibSql({ url: `file:${path.join(process.cwd(), "dev.db")}` });
 const prisma = new PrismaClient({ adapter });
@@ -147,6 +148,90 @@ async function startServer() {
       res.json({ ok: true });
     } catch (e: any) {
       res.status(500).json({ error: e.message });
+    }
+  });
+
+  // ─── Mercado Pago ──────────────────────────────────────────
+  app.post("/api/payments/:id/mercadopago", async (req, res) => {
+    try {
+      const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
+      if (!accessToken) {
+        return res.status(500).json({ error: "Mercado Pago não configurado (Access Token ausente)" });
+      }
+
+      const payment = await prisma.payment.findUnique({
+        where: { id: req.params.id },
+        include: { member: true },
+      });
+
+      if (!payment) {
+        return res.status(404).json({ error: "Pagamento não encontrado" });
+      }
+
+      const client = new MercadoPagoConfig({ accessToken, options: { timeout: 5000 } });
+      const preference = new Preference(client);
+
+      const pref = await preference.create({
+        body: {
+          items: [
+            {
+              id: payment.id,
+              title: `Mensalidade ${payment.month} - ${payment.member.name}`,
+              quantity: 1,
+              unit_price: payment.amount,
+              currency_id: "BRL",
+            },
+          ],
+          external_reference: payment.id,
+          back_urls: {
+            success: `${process.env.APP_URL || 'http://localhost:3000'}/members/${payment.memberId}`,
+            failure: `${process.env.APP_URL || 'http://localhost:3000'}/members/${payment.memberId}`,
+            pending: `${process.env.APP_URL || 'http://localhost:3000'}/members/${payment.memberId}`,
+          },
+          auto_return: "approved",
+          notification_url: `${process.env.APP_URL || 'http://localhost:3000'}/api/webhooks/mercadopago`,
+        },
+      });
+
+      res.json({ init_point: pref.init_point });
+    } catch (e: any) {
+      console.error("Erro MP:", e);
+      res.status(500).json({ error: e.message || "Erro ao gerar link do Mercado Pago" });
+    }
+  });
+
+  app.post("/api/webhooks/mercadopago", async (req, res) => {
+    try {
+      // Mercado pago envia notificações no formato: { action: "payment.updated", data: { id: "123" } }
+      // ou { type: "payment", data: { id: "123" } }
+      const { action, type, data } = req.body;
+      
+      const paymentId = data?.id;
+      const notificationType = action || type;
+
+      if (paymentId && (notificationType === "payment.updated" || notificationType === "payment.created" || notificationType === "payment")) {
+        const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
+        if (accessToken) {
+          const client = new MercadoPagoConfig({ accessToken });
+          const mpPayment = new MPPayment(client);
+          const paymentInfo = await mpPayment.get({ id: paymentId });
+
+          if (paymentInfo.status === "approved" && paymentInfo.external_reference) {
+            await prisma.payment.update({
+              where: { id: paymentInfo.external_reference },
+              data: {
+                status: "Pago",
+                method: paymentInfo.payment_method_id || "Mercado Pago",
+                paymentDate: new Date().toISOString(),
+              },
+            });
+          }
+        }
+      }
+      res.status(200).send("OK");
+    } catch (e: any) {
+      console.error("Erro Webhook MP:", e);
+      res.status(500).send("Error");
     }
   });
 

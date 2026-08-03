@@ -14,6 +14,7 @@ export function MemberPortal({ memberId, onLogout }: MemberPortalProps) {
   const [submitting, setSubmitting] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [pixCopied, setPixCopied] = useState(false);
+  const [mpLoading, setMpLoading] = useState<string | null>(null);
 
   const member = members.find(m => m.id === memberId);
   const payments = getMemberPayments(memberId);
@@ -57,6 +58,24 @@ export function MemberPortal({ memberId, onLogout }: MemberPortalProps) {
 
   const getReceiptStatus = (paymentId: string) => {
     return memberReceipts.find(r => r.paymentId === paymentId);
+  };
+
+  const handleMercadoPago = async (paymentId: string) => {
+    setMpLoading(paymentId);
+    try {
+      const res = await fetch(`/api/payments/${paymentId}/mercadopago`, { method: 'POST' });
+      const data = await res.json();
+      if (data.init_point) {
+        window.location.href = data.init_point;
+      } else {
+        alert(data.error || 'Erro ao gerar pagamento');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Erro de comunicação com o servidor');
+    } finally {
+      setMpLoading(null);
+    }
   };
 
   return (
@@ -255,12 +274,21 @@ export function MemberPortal({ memberId, onLogout }: MemberPortalProps) {
                   <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3 w-full sm:w-auto">
                     <span className="font-bold text-slate-800 text-sm">{formatCurrency(payment.amount)}</span>
                     {payment.status !== 'Pago' && !receipt && (
-                      <button 
-                        onClick={() => setPixPaymentId(payment.id)}
-                        className="text-[10px] font-bold uppercase px-3 py-1.5 bg-emerald-600 text-white rounded hover:bg-emerald-700 transition-colors shrink-0"
-                      >
-                        Pagar via PIX
-                      </button>
+                      <div className="flex gap-2">
+                        <button 
+                          onClick={() => setPixPaymentId(payment.id)}
+                          className="text-[10px] font-bold uppercase px-3 py-1.5 bg-emerald-600 text-white rounded hover:bg-emerald-700 transition-colors shrink-0"
+                        >
+                          Pix Manual
+                        </button>
+                        <button 
+                          onClick={() => handleMercadoPago(payment.id)}
+                          disabled={mpLoading === payment.id}
+                          className="text-[10px] font-bold uppercase px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 transition-colors shrink-0 flex items-center justify-center min-w-[140px]"
+                        >
+                          {mpLoading === payment.id ? 'Aguarde...' : 'Mercado Pago'}
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>
