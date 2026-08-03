@@ -1,4 +1,3 @@
-import "dotenv/config";
 import express from "express";
 import { PrismaClient } from "./src/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
