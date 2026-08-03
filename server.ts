@@ -1,10 +1,20 @@
 import express from "express";
 import { PrismaClient } from "./src/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { Pool } from "pg";
 import { MercadoPagoConfig, Preference, Payment as MPPayment } from "mercadopago";
 
 const databaseUrl = process.env.DATABASE_URL || process.env.PRISMA_DATABASE_URL || process.env.POSTGRES_URL;
-const adapter = databaseUrl ? new PrismaPg(databaseUrl) : undefined;
+
+let adapter: PrismaPg | undefined;
+if (databaseUrl) {
+  const pool = new Pool({
+    connectionString: databaseUrl,
+    ssl: { rejectUnauthorized: false }
+  });
+  adapter = new PrismaPg(pool);
+}
+
 const prisma = databaseUrl ? new PrismaClient({ adapter } as any) : null;
 
 if (!prisma) {
