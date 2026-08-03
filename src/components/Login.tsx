@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Users, UserCircle, ShieldCheck } from 'lucide-react';
+import { Users, UserCircle, ShieldCheck, Eye, EyeOff } from 'lucide-react';
 import { authApi } from '../lib/api';
 
 interface LoginProps {
@@ -10,6 +10,7 @@ export function Login({ onLogin }: LoginProps) {
   const [activeTab, setActiveTab] = useState<'admin' | 'member'>('admin');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -100,14 +101,25 @@ export function Login({ onLogin }: LoginProps) {
               </div>
               <div>
                 <label className="block text-[11px] font-bold uppercase text-slate-500 mb-1">Senha</label>
-                <input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                  placeholder="Sua senha"
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    className="w-full px-3 py-2 pr-10 border border-slate-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    placeholder="Sua senha"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
+                    tabIndex={-1}
+                    title={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
               </div>
               <button type="submit" disabled={loading} className="w-full h-10 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-xs uppercase tracking-wider rounded transition-colors">
                 {loading ? 'Entrando...' : 'Acessar Painel'}
@@ -128,14 +140,25 @@ export function Login({ onLogin }: LoginProps) {
               </div>
               <div>
                 <label className="block text-[11px] font-bold uppercase text-slate-500 mb-1">Senha</label>
-                <input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                  placeholder="Sua senha"
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    className="w-full px-3 py-2 pr-10 border border-slate-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    placeholder="Sua senha"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
+                    tabIndex={-1}
+                    title={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
               </div>
               <button type="submit" disabled={loading} className="w-full h-10 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-xs uppercase tracking-wider rounded transition-colors">
                 {loading ? 'Entrando...' : 'Entrar'}
