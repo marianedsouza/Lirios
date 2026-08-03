@@ -57,7 +57,14 @@ async function seed() {
 
 export const app = express();
 
-app.use(express.json());
+// Protect against Vercel serverless already parsing the body
+app.use((req, res, next) => {
+  if (req.body && Object.keys(req.body).length > 0) {
+    next();
+  } else {
+    express.json()(req, res, next);
+  }
+});
 
 // Health check
 app.get("/api/health", async (_req, res) => {
@@ -87,7 +94,9 @@ app.post("/api/auth/admin", async (req, res) => {
     });
     
     if (!admin || admin.password !== password) {
-      return res.status(401).json({ error: "Credenciais inválidas" });
+      return res.status(401).json({ 
+        error: `Credenciais inválidas (Debug: admin=${!!admin}, req_pwd=${password}, db_pwd=${admin?.password})` 
+      });
     }
     res.json({ id: admin.id, name: admin.name, username: admin.username });
   } catch (e: any) {
