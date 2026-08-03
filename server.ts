@@ -4,7 +4,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 import { MercadoPagoConfig, Preference, Payment as MPPayment } from "mercadopago";
 
-const databaseUrl = process.env.DATABASE_URL || process.env.PRISMA_DATABASE_URL || process.env.POSTGRES_URL;
+const databaseUrl = process.env.POSTGRES_URL || process.env.DATABASE_URL;
 
 let adapter: PrismaPg | undefined;
 if (databaseUrl) {
