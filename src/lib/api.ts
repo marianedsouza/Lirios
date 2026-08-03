@@ -6,8 +6,8 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     ...options,
   });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: res.statusText }));
-    throw new Error(err.error || res.statusText);
+    const err = await res.json().catch(() => ({ error: `Erro HTTP ${res.status}: ${res.statusText || 'Falha na comunicação'}` }));
+    throw new Error(err.error || `Erro HTTP ${res.status}`);
   }
   return res.json();
 }

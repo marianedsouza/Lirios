@@ -14,12 +14,16 @@ export function Login({ onLogin }: LoginProps) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleAdminLogin = async (e: React.FormEvent) => {
+  const handleAdminLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const user = formData.get('username') as string || username;
+    const pass = formData.get('password') as string || password;
+    
     setError('');
     setLoading(true);
     try {
-      await authApi.admin(username, password);
+      await authApi.admin(user, pass);
       onLogin('admin');
     } catch (err: any) {
       setError(err.message || 'Credenciais inválidas');
@@ -28,12 +32,16 @@ export function Login({ onLogin }: LoginProps) {
     }
   };
 
-  const handleMemberLogin = async (e: React.FormEvent) => {
+  const handleMemberLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const user = formData.get('username') as string || username;
+    const pass = formData.get('password') as string || password;
+
     setError('');
     setLoading(true);
     try {
-      const result = await authApi.member(username, password);
+      const result = await authApi.member(user, pass);
       onLogin('member', result.id);
     } catch (err: any) {
       setError(err.message || 'Credenciais inválidas');
@@ -92,6 +100,7 @@ export function Login({ onLogin }: LoginProps) {
                 <label className="block text-[11px] font-bold uppercase text-slate-500 mb-1">Usuário</label>
                 <input
                   type="text"
+                  name="username"
                   required
                   value={username}
                   onChange={e => setUsername(e.target.value)}
@@ -104,6 +113,7 @@ export function Login({ onLogin }: LoginProps) {
                 <div className="relative">
                   <input
                     type={showPassword ? 'text' : 'password'}
+                    name="password"
                     required
                     value={password}
                     onChange={e => setPassword(e.target.value)}
@@ -131,6 +141,7 @@ export function Login({ onLogin }: LoginProps) {
                 <label className="block text-[11px] font-bold uppercase text-slate-500 mb-1">Usuário</label>
                 <input
                   type="text"
+                  name="username"
                   required
                   value={username}
                   onChange={e => setUsername(e.target.value)}
@@ -143,6 +154,7 @@ export function Login({ onLogin }: LoginProps) {
                 <div className="relative">
                   <input
                     type={showPassword ? 'text' : 'password'}
+                    name="password"
                     required
                     value={password}
                     onChange={e => setPassword(e.target.value)}
