@@ -184,6 +184,37 @@ app.post("/api/auth/member", async (req, res) => {
     res.status(500).json({ error: e.message });
   }
 });
+app.post("/api/members/convite", async (req, res) => {
+  try {
+    const { name, phone, whatsapp, birthDate } = req.body;
+    if (!name || !whatsapp) {
+      return res.status(400).json({ error: "Nome e WhatsApp s\xE3o obrigat\xF3rios" });
+    }
+    const baseUsername = name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, ".");
+    const existing = await prisma.member.findMany({ where: { username: { startsWith: baseUsername } } });
+    const username = existing.length > 0 ? `${baseUsername}${existing.length}` : baseUsername;
+    const member = await prisma.member.create({
+      data: {
+        name,
+        username,
+        password: "mudar123",
+        // senha temporária — admin deve alterar
+        phone: phone || "",
+        whatsapp,
+        birthDate: birthDate || "",
+        entryDate: (/* @__PURE__ */ new Date()).toISOString().split("T")[0],
+        monthlyFee: 50,
+        dueDate: 10,
+        status: "Pendente",
+        observations: "Cadastro via link de convite \u2014 aguardando aprova\xE7\xE3o"
+      }
+    });
+    res.json({ ok: true, username, id: member.id });
+  } catch (e) {
+    console.error("Erro convite:", e);
+    res.status(500).json({ error: e.message });
+  }
+});
 app.get("/api/members", async (_req, res) => {
   try {
     const members = await prisma.member.findMany({ orderBy: { createdAt: "desc" } });

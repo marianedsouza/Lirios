@@ -8,6 +8,7 @@ import { AppProvider, useAppStore } from './store/useStore';
 import { Login } from './components/Login';
 import { AdminLayout } from './components/AdminLayout';
 import { MemberPortal } from './components/MemberPortal';
+import { MemberSignup } from './components/MemberSignup';
 
 type UserState = {
   role: 'admin' | 'member' | null;
@@ -20,6 +21,11 @@ function AppContent() {
     const saved = localStorage.getItem('celp_auth');
     return saved ? JSON.parse(saved) : { role: null };
   });
+
+  // Rota pública /convite — mostra formulário sem precisar logar
+  if (window.location.pathname === '/convite') {
+    return <MemberSignup />;
+  }
 
   useEffect(() => {
     localStorage.setItem('celp_auth', JSON.stringify(user));

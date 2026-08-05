@@ -145,6 +145,47 @@ app.post("/api/auth/member", async (req, res) => {
   }
 });
 
+// ─── Convite público (sem autenticação) ────────────────────
+app.post("/api/members/convite", async (req, res) => {
+  try {
+    const { name, phone, whatsapp, birthDate } = req.body;
+    if (!name || !whatsapp) {
+      return res.status(400).json({ error: "Nome e WhatsApp são obrigatórios" });
+    }
+
+    // Gera username a partir do nome (sem acentos, lowercase, sem espaços)
+    const baseUsername = name
+      .toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/\s+/g, ".");
+
+    // Garante unicidade do username
+    const existing = await prisma!.member.findMany({ where: { username: { startsWith: baseUsername } } });
+    const username = existing.length > 0 ? `${baseUsername}${existing.length}` : baseUsername;
+
+    const member = await prisma!.member.create({
+      data: {
+        name,
+        username,
+        password: "mudar123", // senha temporária — admin deve alterar
+        phone: phone || "",
+        whatsapp,
+        birthDate: birthDate || "",
+        entryDate: new Date().toISOString().split("T")[0],
+        monthlyFee: 50,
+        dueDate: 10,
+        status: "Pendente" as any,
+        observations: "Cadastro via link de convite — aguardando aprovação",
+      },
+    });
+
+    res.json({ ok: true, username, id: member.id });
+  } catch (e: any) {
+    console.error("Erro convite:", e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ─── Members ───────────────────────────────────────────────
 app.get("/api/members", async (_req, res) => {
   try {
