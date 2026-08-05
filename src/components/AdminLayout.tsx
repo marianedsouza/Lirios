@@ -1,31 +1,25 @@
 import React, { useState } from 'react';
-import { Users, LayoutDashboard, FileText, LogOut, Menu, X, Wallet, Settings as SettingsIcon, CheckSquare, Bell } from 'lucide-react';
+import { Users, LayoutDashboard, FileText, LogOut, Menu, X, Wallet, Settings as SettingsIcon } from 'lucide-react';
 import { cn } from '../lib/utils';
-import { useAppStore } from '../store/useStore';
 import { Dashboard } from './Admin/Dashboard';
 import { Members } from './Admin/Members';
 import { Reports } from './Admin/Reports';
 import { Caixa } from './Admin/Caixa';
 import { Settings } from './Admin/Settings';
-import { Receipts } from './Admin/Receipts';
 
 interface AdminLayoutProps {
   onLogout: () => void;
 }
 
-type Tab = 'dashboard' | 'members' | 'reports' | 'caixa' | 'settings' | 'receipts';
+type Tab = 'dashboard' | 'members' | 'reports' | 'caixa' | 'settings';
 
 export function AdminLayout({ onLogout }: AdminLayoutProps) {
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { receipts } = useAppStore();
-  
-  const pendingCount = receipts.filter(r => r.status === 'Pendente').length;
 
   const navigation = [
     { name: 'Painel Geral', id: 'dashboard', icon: LayoutDashboard },
     { name: 'Caixa e Despesas', id: 'caixa', icon: Wallet },
-    { name: 'Comprovantes', id: 'receipts', icon: CheckSquare },
     { name: 'Cadastro de Membros', id: 'members', icon: Users },
     { name: 'Relatórios', id: 'reports', icon: FileText },
     { name: 'Configurações', id: 'settings', icon: SettingsIcon },
@@ -35,7 +29,6 @@ export function AdminLayout({ onLogout }: AdminLayoutProps) {
     switch (activeTab) {
       case 'dashboard': return <Dashboard />;
       case 'caixa': return <Caixa />;
-      case 'receipts': return <Receipts />;
       case 'members': return <Members />;
       case 'reports': return <Reports />;
       case 'settings': return <Settings />;
@@ -47,7 +40,6 @@ export function AdminLayout({ onLogout }: AdminLayoutProps) {
     switch (activeTab) {
       case 'dashboard': return 'Dashboard Administrativo';
       case 'caixa': return 'Controle de Caixa e Despesas';
-      case 'receipts': return 'Validação de Comprovantes';
       case 'members': return 'Cadastro e Controle de Membros';
       case 'reports': return 'Relatórios e Exportações';
       case 'settings': return 'Configurações do Sistema';
@@ -94,9 +86,6 @@ export function AdminLayout({ onLogout }: AdminLayoutProps) {
               >
                 <Icon size={20} />
                 <span className="text-sm font-medium flex-1 text-left">{item.name}</span>
-                {item.id === 'receipts' && pendingCount > 0 && (
-                  <span className="px-1.5 py-0.5 bg-amber-500 text-white text-[9px] font-bold rounded-full">{pendingCount}</span>
-                )}
               </button>
             )
           })}
@@ -123,10 +112,12 @@ export function AdminLayout({ onLogout }: AdminLayoutProps) {
         {/* Top Header */}
         <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 shadow-sm z-10 shrink-0">
           <h2 className="text-lg font-semibold text-slate-700 italic">{getTitle()}</h2>
-          <div className="flex items-center space-x-4">
-            <div className="text-right hidden sm:block">
-              <p className="text-[10px] text-slate-400 uppercase font-bold tracking-tighter">Último Acesso</p>
-              <p className="text-xs font-mono text-emerald-600">Hoje</p>
+          {/* Conta de Recebimento — dados fixos da conta Mercado Pago da Hellen */}
+          <div className="hidden sm:flex items-center gap-3 bg-blue-50 border border-blue-100 rounded-lg px-4 py-1.5">
+            <div className="text-right">
+              <p className="text-[9px] font-bold text-blue-500 uppercase tracking-widest">Conta de Recebimento</p>
+              <p className="text-xs font-bold text-slate-800">Hellen · Mercado Pago</p>
+              <p className="text-[10px] font-mono text-slate-500">ID 205810036 · App 2769633996819115</p>
             </div>
           </div>
         </header>

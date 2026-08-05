@@ -3,11 +3,12 @@ import { useAppStore } from '../../store/useStore';
 import { Member } from '../../types';
 import { MemberForm } from './MemberForm';
 import { MemberDetails } from './MemberDetails';
+import { BookOpen } from 'lucide-react';
 
 type FilterType = 'Todos' | 'Ativos' | 'Inativos' | 'Com Atraso';
 
 export function Members() {
-  const { members, payments } = useAppStore();
+  const { members, payments, settings } = useAppStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState<FilterType>('Todos');
   
@@ -56,6 +57,19 @@ export function Members() {
             + NOVO MEMBRO
          </button>
       </div>
+
+      {/* Diretrizes da Casa */}
+      {settings.houseGuidelines && (
+        <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden shrink-0">
+          <div className="px-4 py-3 border-b border-slate-100 flex items-center gap-2">
+            <BookOpen size={14} className="text-emerald-600" />
+            <h3 className="text-sm font-bold text-slate-600">Diretrizes da Casa</h3>
+          </div>
+          <div className="px-4 py-3">
+            <p className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed">{settings.houseGuidelines}</p>
+          </div>
+        </div>
+      )}
       <div className="flex-1 bg-white border border-slate-200 rounded-lg shadow-sm flex flex-col min-h-0 overflow-hidden">
         <div className="px-4 py-3 border-b border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
           <h3 className="text-sm font-bold text-slate-600">Cadastro de Membros</h3>

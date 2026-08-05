@@ -254,6 +254,35 @@ app.delete("/api/payments/:id", async (req, res) => {
     res.status(500).json({ error: e.message });
   }
 });
+app.get("/api/mp/transactions", async (_req, res) => {
+  try {
+    const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
+    if (!accessToken) {
+      return res.status(500).json({ error: "Mercado Pago n\xE3o configurado (Access Token ausente)" });
+    }
+    const response = await fetch(
+      "https://api.mercadopago.com/v1/payments/search?sort=date_created&criteria=desc&range=date_created&begin_date=NOW-3MONTHS&end_date=NOW&limit=50",
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      return res.status(response.status).json({ error: err.message || "Erro ao consultar Mercado Pago" });
+    }
+    const data = await response.json();
+    const transactions = (data.results || []).map((p) => ({
+      id: String(p.id),
+      date_created: p.date_created,
+      description: p.description || p.additional_info?.items?.[0]?.title || null,
+      amount: p.transaction_amount,
+      type: "income",
+      status: p.status
+    }));
+    res.json(transactions);
+  } catch (e) {
+    console.error("Erro MP transactions:", e);
+    res.status(500).json({ error: e.message || "Erro ao buscar movimenta\xE7\xF5es" });
+  }
+});
 app.post("/api/payments/:id/mercadopago", async (req, res) => {
   try {
     const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
