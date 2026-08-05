@@ -4,6 +4,7 @@ import { Member } from '../../types';
 import { MemberForm } from './MemberForm';
 import { MemberDetails } from './MemberDetails';
 import { BookOpen, Copy, Check, UserPlus, Trash2 } from 'lucide-react';
+import { GuidelinesAccordion } from '../GuidelinesAccordion';
 
 type FilterType = 'Todos' | 'Ativos' | 'Inativos' | 'Pendentes' | 'Com Atraso';
 
@@ -93,16 +94,10 @@ export function Members() {
         </div>
       )}
 
-      {/* Diretrizes da Casa */}
+      {/* Diretrizes da Casa — acordeão fechado */}
       {settings.houseGuidelines && (
-        <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden shrink-0">
-          <div className="px-4 py-3 border-b border-slate-100 flex items-center gap-2">
-            <BookOpen size={14} className="text-emerald-600" />
-            <h3 className="text-sm font-bold text-slate-600">Diretrizes da Casa</h3>
-          </div>
-          <div className="px-4 py-3">
-            <p className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed">{settings.houseGuidelines}</p>
-          </div>
+        <div className="shrink-0">
+          <GuidelinesAccordion text={settings.houseGuidelines} />
         </div>
       )}
 

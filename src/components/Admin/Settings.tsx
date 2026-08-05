@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Settings as SettingsIcon, Save, DollarSign, BookOpen } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Save, DollarSign, BookOpen, Bold, Italic, Heading } from 'lucide-react';
 import { useAppStore } from '../../store/useStore';
+import { GuidelinesAccordion } from '../GuidelinesAccordion';
 
 export function Settings() {
   const { settings, updateSettings } = useAppStore();
@@ -9,6 +10,8 @@ export function Settings() {
   const [defaultDueDate, setDefaultDueDate] = useState(settings.defaultDueDate.toString());
   const [houseGuidelines, setHouseGuidelines] = useState(settings.houseGuidelines);
   const [saved, setSaved] = useState(false);
+  const [preview, setPreview] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     setDefaultMonthlyFee(settings.defaultMonthlyFee.toString());
@@ -27,6 +30,34 @@ export function Settings() {
     setTimeout(() => setSaved(false), 3000);
   };
 
+  const wrapSelection = (prefix: string, suffix: string) => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    const start = ta.selectionStart;
+    const end = ta.selectionEnd;
+    const selected = houseGuidelines.slice(start, end) || 'texto';
+    const newValue =
+      houseGuidelines.slice(0, start) +
+      prefix + selected + suffix +
+      houseGuidelines.slice(end);
+    setHouseGuidelines(newValue);
+    setTimeout(() => {
+      ta.focus();
+      ta.setSelectionRange(start + prefix.length, start + prefix.length + selected.length);
+    }, 0);
+  };
+
+  const insertHeading = () => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    const start = ta.selectionStart;
+    const before = houseGuidelines.slice(0, start);
+    const lineStart = before.lastIndexOf('\n') + 1;
+    const newValue = houseGuidelines.slice(0, lineStart) + '# ' + houseGuidelines.slice(lineStart);
+    setHouseGuidelines(newValue);
+    setTimeout(() => { ta.focus(); ta.setSelectionRange(lineStart + 2, lineStart + 2); }, 0);
+  };
+
   return (
     <div className="flex-1 flex flex-col h-full space-y-6 min-h-0 overflow-y-auto">
       <form onSubmit={handleSave} className="space-y-6">
@@ -43,9 +74,7 @@ export function Settings() {
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Valor Padrão (R$)</label>
                   <input
-                    type="number"
-                    step="0.01"
-                    min="0"
+                    type="number" step="0.01" min="0"
                     value={defaultMonthlyFee}
                     onChange={e => setDefaultMonthlyFee(e.target.value)}
                     className="w-full text-xs border border-slate-200 rounded px-3 py-2 bg-slate-50 focus:outline-emerald-500"
@@ -54,9 +83,7 @@ export function Settings() {
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Dia de Vencimento</label>
                   <input
-                    type="number"
-                    min="1"
-                    max="31"
+                    type="number" min="1" max="31"
                     value={defaultDueDate}
                     onChange={e => setDefaultDueDate(e.target.value)}
                     className="w-full text-xs border border-slate-200 rounded px-3 py-2 bg-slate-50 focus:outline-emerald-500"
@@ -70,24 +97,66 @@ export function Settings() {
 
         {/* Diretrizes da Casa */}
         <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
-            <BookOpen className="text-emerald-600" size={20} />
-            <h3 className="text-sm font-bold text-slate-700">Diretrizes da Casa</h3>
+          <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <BookOpen className="text-emerald-600" size={20} />
+              <h3 className="text-sm font-bold text-slate-700">Diretrizes da Casa</h3>
+            </div>
+            <button
+              type="button"
+              onClick={() => setPreview(p => !p)}
+              className="text-[10px] font-bold text-slate-400 hover:text-emerald-600 uppercase transition-colors"
+            >
+              {preview ? 'Editar' : 'Pré-visualizar'}
+            </button>
           </div>
-          <div className="p-6">
-            <div className="space-y-4 max-w-2xl">
-              <div>
-                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Regras e Orientações</label>
+          <div className="p-6 max-w-2xl space-y-3">
+            {!preview ? (
+              <>
+                {/* Toolbar de formatação */}
+                <div className="flex items-center gap-1 border border-slate-200 rounded px-2 py-1 bg-slate-50 w-fit">
+                  <button
+                    type="button"
+                    onClick={() => wrapSelection('**', '**')}
+                    title="Negrito (**texto**)"
+                    className="p-1.5 rounded hover:bg-slate-200 transition-colors text-slate-600"
+                  >
+                    <Bold size={13} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => wrapSelection('*', '*')}
+                    title="Itálico (*texto*)"
+                    className="p-1.5 rounded hover:bg-slate-200 transition-colors text-slate-600"
+                  >
+                    <Italic size={13} />
+                  </button>
+                  <div className="w-px h-4 bg-slate-200 mx-1" />
+                  <button
+                    type="button"
+                    onClick={insertHeading}
+                    title="Título (# Texto)"
+                    className="p-1.5 rounded hover:bg-slate-200 transition-colors text-slate-600"
+                  >
+                    <Heading size={13} />
+                  </button>
+                </div>
+
                 <textarea
+                  ref={textareaRef}
                   value={houseGuidelines}
                   onChange={e => setHouseGuidelines(e.target.value)}
-                  rows={8}
-                  placeholder="Digite as diretrizes e regras da casa aqui..."
-                  className="w-full text-xs border border-slate-200 rounded px-3 py-2 bg-slate-50 focus:outline-emerald-500 resize-none"
+                  rows={10}
+                  placeholder={"# Título principal\n\n**Regra 1:** Descrição da regra.\n\n*Observação:* Texto em itálico.\n\n## Subtítulo\n\nMais texto aqui..."}
+                  className="w-full text-xs font-mono border border-slate-200 rounded px-3 py-2 bg-slate-50 focus:outline-emerald-500 resize-none leading-relaxed"
                 />
-                <p className="text-[10px] text-slate-400 mt-1">Visível para os membros no portal.</p>
-              </div>
-            </div>
+                <p className="text-[10px] text-slate-400">
+                  Use <code className="bg-slate-100 px-1 rounded"># Título</code>, <code className="bg-slate-100 px-1 rounded">**negrito**</code> e <code className="bg-slate-100 px-1 rounded">*itálico*</code>.
+                </p>
+              </>
+            ) : (
+              <GuidelinesAccordion text={houseGuidelines} />
+            )}
           </div>
         </div>
 

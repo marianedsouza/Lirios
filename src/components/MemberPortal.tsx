@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../store/useStore';
 import { formatCurrency, getMonthName } from '../lib/utils';
 import { LogOut, Calendar, MessageSquare, CheckCircle, Clock, AlertTriangle, BookOpen, CreditCard } from 'lucide-react';
+import { GuidelinesAccordion } from './GuidelinesAccordion';
 
 interface MemberPortalProps {
   memberId: string;
@@ -138,19 +139,9 @@ export function MemberPortal({ memberId, onLogout }: MemberPortalProps) {
           </div>
         )}
 
-        {/* Diretrizes da casa */}
+        {/* Diretrizes da casa — acordeão fechado */}
         {settings.houseGuidelines && (
-          <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center gap-2">
-              <BookOpen size={16} className="text-emerald-600" />
-              <h3 className="text-sm font-bold text-slate-600">Diretrizes da Casa</h3>
-            </div>
-            <div className="p-6">
-              <div className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
-                {settings.houseGuidelines}
-              </div>
-            </div>
-          </div>
+          <GuidelinesAccordion text={settings.houseGuidelines} />
         )}
 
         {/* Lista de mensalidades */}
