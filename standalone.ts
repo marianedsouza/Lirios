@@ -2,7 +2,7 @@ import "dotenv/config";
 import path from "path";
 import { createServer as createViteServer } from "vite";
 import express from "express";
-import { app, ensureReady } from "./server";
+import { app, ensureReady } from "./server.js";
 
 async function attachStatic() {
   if (process.env.NODE_ENV !== "production") {
