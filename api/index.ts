@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { app, ensureReady } from "../server";
+import { app, ensureReady } from "../server.js";
 
 let ready: Promise<void> | null = null;
 

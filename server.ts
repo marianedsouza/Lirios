@@ -5,19 +5,38 @@ import { MercadoPagoConfig, Preference, Payment as MPPayment } from "mercadopago
 
 // Removemos qualquer leitura de PRISMA_DATABASE_URL para forçar a usar a Neon,
 // mesmo que o Vercel tenha variáveis velhas do Prisma Accelerate configuradas.
-const databaseUrl = process.env.POSTGRES_URL || process.env.DATABASE_URL;
+const rawDatabaseUrl = process.env.POSTGRES_URL || process.env.DATABASE_URL;
 
-let adapter: PrismaPg | undefined;
-if (databaseUrl) {
-  adapter = new PrismaPg({
-    connectionString: databaseUrl,
-    ssl: { rejectUnauthorized: false }
-  } as any);
+// O driver "pg" (usado pelo @prisma/adapter-pg) não reconhece o parâmetro
+// "channel_binding", que a Neon/Vercel adicionam por padrão às connection
+// strings. Deixar esse parâmetro na URL pode fazer a conexão falhar de forma
+// não tratada logo na inicialização, derrubando toda a função serverless
+// (FUNCTION_INVOCATION_FAILED) antes de qualquer try/catch conseguir atuar.
+function sanitizeConnectionString(url: string): string {
+  try {
+    const parsed = new URL(url);
+    parsed.searchParams.delete("channel_binding");
+    return parsed.toString();
+  } catch {
+    return url;
+  }
 }
 
-const prisma = databaseUrl ? new PrismaClient({ adapter } as any) : null;
+const databaseUrl = rawDatabaseUrl ? sanitizeConnectionString(rawDatabaseUrl) : undefined;
 
-if (!prisma) {
+let prisma: PrismaClient | null = null;
+if (databaseUrl) {
+  try {
+    const adapter = new PrismaPg({
+      connectionString: databaseUrl,
+      ssl: { rejectUnauthorized: false },
+    } as any);
+    prisma = new PrismaClient({ adapter } as any);
+  } catch (e) {
+    console.error("Falha ao inicializar o Prisma Client:", e);
+    prisma = null;
+  }
+} else {
   console.error("DATABASE_URL não configurada. Defina a URL do banco PostgreSQL no .env");
 }
 
