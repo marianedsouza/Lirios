@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../store/useStore';
 import { formatCurrency, getMonthName } from '../lib/utils';
 import { LogOut, Calendar, MessageSquare, CheckCircle, Clock, AlertTriangle, BookOpen, CreditCard } from 'lucide-react';
@@ -9,9 +9,23 @@ interface MemberPortalProps {
 }
 
 export function MemberPortal({ memberId, onLogout }: MemberPortalProps) {
-  const { members, settings, getMemberPayments, getMemberReceipts } = useAppStore();
+  const { members, settings, getMemberPayments, getMemberReceipts, refreshPayments } = useAppStore();
   const [mpLoading, setMpLoading] = useState<string | null>(null);
   const [mpError, setMpError] = useState<string | null>(null);
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
+
+  // Detecta retorno do Mercado Pago via query string ?payment=success
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get('payment') || params.get('status') || params.get('collection_status');
+    if (status === 'success' || status === 'approved') {
+      setPaymentSuccess(true);
+      // Recarrega pagamentos do banco para refletir o status atualizado pelo webhook
+      refreshPayments();
+      // Limpa a query string da URL sem recarregar a página
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [refreshPayments]);
 
   const member = members.find(m => m.id === memberId);
   const payments = getMemberPayments(memberId);
@@ -77,6 +91,19 @@ export function MemberPortal({ memberId, onLogout }: MemberPortalProps) {
         {mpError && (
           <div className="bg-red-50 border border-red-200 rounded p-4 text-sm text-red-700 font-medium">
             {mpError}
+          </div>
+        )}
+
+        {/* Sucesso de pagamento (retorno do MP) */}
+        {paymentSuccess && (
+          <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 flex items-start gap-3 shadow-sm">
+            <CheckCircle size={20} className="text-emerald-500 mt-0.5 shrink-0" />
+            <div>
+              <h3 className="text-sm font-bold text-emerald-900">Pagamento realizado com sucesso!</h3>
+              <p className="text-emerald-700 text-xs mt-1">
+                Seu pagamento foi confirmado pelo Mercado Pago. O status abaixo já foi atualizado.
+              </p>
+            </div>
           </div>
         )}
 

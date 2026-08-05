@@ -22,6 +22,7 @@ interface AppState {
   approveReceipt: (receiptId: string) => Promise<void>;
   rejectReceipt: (receiptId: string) => Promise<void>;
   getMemberReceipts: (memberId: string) => PaymentReceipt[];
+  refreshPayments: () => Promise<void>;
 }
 
 const AppContext = createContext<AppState | undefined>(undefined);
@@ -189,6 +190,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setReceipts((prev) => prev.map(r => r.id === receiptId ? updated : r));
   }, []);
 
+  const refreshPayments = useCallback(async () => {
+    try {
+      const [p, r] = await Promise.all([paymentsApi.list(), receiptsApi.list()]);
+      setPayments(p as Payment[]);
+      setReceipts(r as PaymentReceipt[]);
+    } catch (err) {
+      console.error('Failed to refresh payments:', err);
+    }
+  }, []);
+
   const getMemberReceipts = useCallback((memberId: string) => {
     return receipts.filter(r => r.memberId === memberId).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }, [receipts]);
@@ -199,6 +210,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       addMember, updateMember, registerPayment, generateMonthlyPayments,
       getMemberPayments, addExpense, deleteExpense, updateSettings,
       submitReceipt, approveReceipt, rejectReceipt, getMemberReceipts,
+      refreshPayments,
     }}>
       {children}
     </AppContext.Provider>
