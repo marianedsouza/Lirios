@@ -9,3 +9,6 @@ coverage/
 
 /src/generated/prisma
 .vercel
+
+# bundle gerado da função serverless (sourcemap não precisa ir pro repo)
+api/index.js.map
