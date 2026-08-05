@@ -6,7 +6,14 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     ...options,
   });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: `Erro HTTP ${res.status}: ${res.statusText || 'Falha na comunicação'}` }));
+    const raw = await res.text();
+    let err: { error?: string } = {};
+    try {
+      err = JSON.parse(raw);
+    } catch {
+      const trimmed = raw.trim().replace(/\s+/g, ' ').slice(0, 400);
+      err = { error: trimmed ? `Erro HTTP ${res.status}: ${trimmed}` : `Erro HTTP ${res.status}: ${res.statusText || 'Falha na comunicação'}` };
+    }
     throw new Error(err.error || `Erro HTTP ${res.status}`);
   }
   return res.json();
