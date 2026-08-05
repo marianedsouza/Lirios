@@ -4,7 +4,8 @@ import { useAppStore } from '../../store/useStore';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { formatCurrency, getMonthName } from '../../lib/utils';
-import { ArrowLeft, Check, Calendar, Phone, MessageSquare } from 'lucide-react';
+import { paymentsApi } from '../../lib/api';
+import { ArrowLeft, Check, Calendar, Phone, MessageSquare, CreditCard } from 'lucide-react';
 
 interface MemberDetailsProps {
   member: Member;
@@ -18,6 +19,21 @@ export function MemberDetails({ member, onBack }: MemberDetailsProps) {
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('PIX');
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
+  const [mpLoading, setMpLoading] = useState<string | null>(null);
+  const [mpError, setMpError] = useState<string | null>(null);
+
+  const handleMercadoPago = async (payment: Payment) => {
+    setMpLoading(payment.id!);
+    setMpError(null);
+    try {
+      const { init_point } = await paymentsApi.mercadopago(payment.id!);
+      window.open(init_point, '_blank');
+    } catch (e: any) {
+      setMpError(e.message || 'Erro ao gerar link do Mercado Pago');
+    } finally {
+      setMpLoading(null);
+    }
+  };
 
   const handleRegisterPayment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,6 +137,11 @@ export function MemberDetails({ member, onBack }: MemberDetailsProps) {
           ) : null}
 
           <div className="space-y-3">
+            {mpError && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
+                {mpError}
+              </div>
+            )}
             {payments.map(payment => (
               <div key={payment.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors">
                 <div className="mb-3 sm:mb-0">
@@ -143,9 +164,21 @@ export function MemberDetails({ member, onBack }: MemberDetailsProps) {
                 <div className="flex items-center justify-between sm:justify-end sm:space-x-4 w-full sm:w-auto">
                   <span className="font-semibold text-gray-900">{formatCurrency(payment.amount)}</span>
                   {payment.status !== 'Pago' && (
-                    <Button size="sm" onClick={() => setSelectedPayment(payment)}>
-                      Registrar
-                    </Button>
+                    <div className="flex items-center space-x-2">
+                      <Button size="sm" onClick={() => setSelectedPayment(payment)}>
+                        Registrar
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleMercadoPago(payment)}
+                        disabled={mpLoading === payment.id}
+                        title="Gerar link de pagamento via Mercado Pago"
+                      >
+                        <CreditCard size={14} className="mr-1" />
+                        {mpLoading === payment.id ? 'Gerando...' : 'Mercado Pago'}
+                      </Button>
+                    </div>
                   )}
                 </div>
               </div>

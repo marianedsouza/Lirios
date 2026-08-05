@@ -72,6 +72,7 @@ export const paymentsApi = {
   create: (data: Omit<PaymentData, 'id'>) => request<PaymentData>('/payments', { method: 'POST', body: JSON.stringify(data) }),
   update: (id: string, data: Partial<PaymentData>) => request<PaymentData>(`/payments/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   remove: (id: string) => request<{ ok: boolean }>(`/payments/${id}`, { method: 'DELETE' }),
+  mercadopago: (id: string) => request<{ init_point: string }>(`/payments/${id}/mercadopago`, { method: 'POST' }),
 };
 
 // ─── Expenses ──────────────────────────────────────────────
