@@ -186,19 +186,26 @@ app.post("/api/auth/member", async (req, res) => {
 });
 app.post("/api/members/convite", async (req, res) => {
   try {
-    const { name, phone, whatsapp, birthDate } = req.body;
+    const { name, username, password, phone, whatsapp, birthDate } = req.body;
     if (!name || !whatsapp) {
       return res.status(400).json({ error: "Nome e WhatsApp s\xE3o obrigat\xF3rios" });
     }
-    const baseUsername = name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, ".");
-    const existing = await prisma.member.findMany({ where: { username: { startsWith: baseUsername } } });
-    const username = existing.length > 0 ? `${baseUsername}${existing.length}` : baseUsername;
+    let finalUsername = (username || "").trim();
+    if (!finalUsername) {
+      finalUsername = name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, ".");
+    }
+    const existing = await prisma.member.findMany({ where: { username: { startsWith: finalUsername } } });
+    if (existing.length > 0) {
+      const exact = existing.find((m) => m.username === finalUsername);
+      if (exact) {
+        return res.status(400).json({ error: "Este usu\xE1rio j\xE1 est\xE1 em uso. Escolha outro." });
+      }
+    }
     const member = await prisma.member.create({
       data: {
         name,
-        username,
-        password: "mudar123",
-        // senha temporária — admin deve alterar
+        username: finalUsername,
+        password: (password || "mudar123").trim(),
         phone: phone || "",
         whatsapp,
         birthDate: birthDate || "",
@@ -209,7 +216,7 @@ app.post("/api/members/convite", async (req, res) => {
         observations: "Cadastro via link de convite \u2014 aguardando aprova\xE7\xE3o"
       }
     });
-    res.json({ ok: true, username, id: member.id });
+    res.json({ ok: true, username: finalUsername, id: member.id });
   } catch (e) {
     console.error("Erro convite:", e);
     res.status(500).json({ error: e.message });

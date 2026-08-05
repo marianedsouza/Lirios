@@ -148,26 +148,34 @@ app.post("/api/auth/member", async (req, res) => {
 // ─── Convite público (sem autenticação) ────────────────────
 app.post("/api/members/convite", async (req, res) => {
   try {
-    const { name, phone, whatsapp, birthDate } = req.body;
+    const { name, username, password, phone, whatsapp, birthDate } = req.body;
     if (!name || !whatsapp) {
       return res.status(400).json({ error: "Nome e WhatsApp são obrigatórios" });
     }
 
-    // Gera username a partir do nome (sem acentos, lowercase, sem espaços)
-    const baseUsername = name
-      .toLowerCase()
-      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-      .replace(/\s+/g, ".");
+    // Se não vier username, gera a partir do nome
+    let finalUsername = (username || "").trim();
+    if (!finalUsername) {
+      finalUsername = name
+        .toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/\s+/g, ".");
+    }
 
     // Garante unicidade do username
-    const existing = await prisma!.member.findMany({ where: { username: { startsWith: baseUsername } } });
-    const username = existing.length > 0 ? `${baseUsername}${existing.length}` : baseUsername;
+    const existing = await prisma!.member.findMany({ where: { username: { startsWith: finalUsername } } });
+    if (existing.length > 0) {
+      const exact = existing.find((m: any) => m.username === finalUsername);
+      if (exact) {
+        return res.status(400).json({ error: "Este usuário já está em uso. Escolha outro." });
+      }
+    }
 
     const member = await prisma!.member.create({
       data: {
         name,
-        username,
-        password: "mudar123", // senha temporária — admin deve alterar
+        username: finalUsername,
+        password: (password || "mudar123").trim(),
         phone: phone || "",
         whatsapp,
         birthDate: birthDate || "",
@@ -179,7 +187,7 @@ app.post("/api/members/convite", async (req, res) => {
       },
     });
 
-    res.json({ ok: true, username, id: member.id });
+    res.json({ ok: true, username: finalUsername, id: member.id });
   } catch (e: any) {
     console.error("Erro convite:", e);
     res.status(500).json({ error: e.message });
