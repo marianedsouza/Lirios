@@ -466,7 +466,7 @@ function ensureReady() {
   return readyPromise;
 }
 
-// api/index.ts
+// src/server-handler.ts
 var ready = null;
 async function handler(req, res) {
   try {
