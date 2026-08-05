@@ -3,12 +3,12 @@ import { useAppStore } from '../../store/useStore';
 import { Member } from '../../types';
 import { MemberForm } from './MemberForm';
 import { MemberDetails } from './MemberDetails';
-import { BookOpen, Copy, Check, UserPlus } from 'lucide-react';
+import { BookOpen, Copy, Check, UserPlus, Trash2 } from 'lucide-react';
 
 type FilterType = 'Todos' | 'Ativos' | 'Inativos' | 'Pendentes' | 'Com Atraso';
 
 export function Members() {
-  const { members, payments, settings, updateMember } = useAppStore();
+  const { members, payments, settings, updateMember, deleteMember } = useAppStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState<FilterType>('Todos');
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -47,6 +47,11 @@ export function Members() {
 
   const handleApprove = async (member: Member) => {
     await updateMember(member.id, { status: 'Ativo' });
+  };
+
+  const handleDelete = async (member: Member) => {
+    if (!window.confirm(`Apagar "${member.name}" permanentemente? Todos os pagamentos associados também serão removidos.`)) return;
+    await deleteMember(member.id);
   };
 
   if (viewingMember) {
@@ -165,7 +170,7 @@ export function Members() {
                       </div>
                     </td>
                     <td className="px-4 py-2.5">
-                      <div className="flex gap-3 flex-wrap">
+                      <div className="flex gap-3 flex-wrap items-center">
                         {isPending ? (
                           <button
                             onClick={() => handleApprove(member)}
@@ -177,6 +182,9 @@ export function Members() {
                           <button onClick={() => setViewingMember(member)} className="text-emerald-600 text-[10px] font-bold underline">Detalhes</button>
                         )}
                         <button onClick={() => handleOpenForm(member)} className="text-emerald-600 text-[10px] font-bold underline">Editar</button>
+                        <button onClick={() => handleDelete(member)} className="text-rose-400 hover:text-rose-600 transition-colors" title="Apagar membro">
+                          <Trash2 size={13} />
+                        </button>
                       </div>
                     </td>
                   </tr>

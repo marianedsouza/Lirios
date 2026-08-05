@@ -12,6 +12,7 @@ interface AppState {
   loading: boolean;
   addMember: (member: Omit<Member, 'id'>) => Promise<void>;
   updateMember: (id: string, member: Partial<Member>) => Promise<void>;
+  deleteMember: (id: string) => Promise<void>;
   registerPayment: (paymentId: string, method: Payment['method'], date: string) => Promise<void>;
   generateMonthlyPayments: () => Promise<void>;
   getMemberPayments: (memberId: string) => Payment[];
@@ -77,6 +78,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const updateMember = useCallback(async (id: string, updates: Partial<Member>) => {
     const updated = await membersApi.update(id, updates) as Member;
     setMembers((prev) => prev.map((m) => (m.id === id ? updated : m)));
+  }, []);
+
+  const deleteMember = useCallback(async (id: string) => {
+    await membersApi.remove(id);
+    setMembers((prev) => prev.filter((m) => m.id !== id));
   }, []);
 
   const registerPayment = useCallback(async (paymentId: string, method: Payment['method'], date: string) => {
@@ -207,7 +213,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   return (
     <AppContext.Provider value={{
       members, payments, expenses, settings, receipts, loading,
-      addMember, updateMember, registerPayment, generateMonthlyPayments,
+      addMember, updateMember, deleteMember, registerPayment, generateMonthlyPayments,
       getMemberPayments, addExpense, deleteExpense, updateSettings,
       submitReceipt, approveReceipt, rejectReceipt, getMemberReceipts,
       refreshPayments,
