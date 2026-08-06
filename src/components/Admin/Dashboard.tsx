@@ -117,28 +117,20 @@ export function Dashboard() {
       </div>
 
       {/* Arrecadado no mês — Mensalidade | Doação | Total */}
-      <div className="bg-[#1A4531] rounded-2xl border border-[#23603A] shadow-[0_8px_30px_rgba(0,0,0,0.08)] p-4 md:p-6 relative overflow-hidden shrink-0">
+      <div className="bg-[#1A4531] rounded-2xl border border-[#23603A] shadow-[0_8px_30px_rgba(0,0,0,0.08)] px-3 py-3 md:px-5 md:py-4 relative overflow-hidden shrink-0">
         <div className="absolute top-0 right-0 -mr-10 -mt-10 w-40 h-40 rounded-full bg-[#2E7A4A] opacity-20 blur-2xl"></div>
-        <div className="flex items-center justify-between gap-3 mb-4 relative z-10">
-          <p className="text-[10px] font-bold text-[#A3BCA7] uppercase tracking-widest">
-            Arrecadado no Mês · {getMonthName(currentMonth)}
-          </p>
-          <p className="text-[10px] font-bold text-[#A3BCA7] uppercase tracking-widest">
-            {paidPayments.length} mensalidade(s) · {currentMonthPaidDonations.length} doação(ões)
-          </p>
-        </div>
-        <div className="grid grid-cols-3 gap-3 md:gap-6 relative z-10">
-          <div className="bg-[#23603A]/40 border border-white/10 rounded-xl px-3 py-3 md:py-4 text-center">
+        <div className="grid grid-cols-3 gap-2 md:gap-3 relative z-10">
+          <div className="bg-[#23603A]/40 border border-white/10 rounded-xl px-2 py-2.5 md:py-3 text-center min-w-0">
             <p className="text-[10px] font-bold text-[#A3BCA7] uppercase tracking-wider mb-1">Mensalidade</p>
-            <p className="text-base md:text-2xl font-bold text-white">{formatCurrency(collectedAmount)}</p>
+            <p className="text-sm md:text-xl font-bold text-white whitespace-nowrap tabular-nums">{formatCurrency(collectedAmount)}</p>
           </div>
-          <div className="bg-[#23603A]/40 border border-white/10 rounded-xl px-3 py-3 md:py-4 text-center">
+          <div className="bg-[#23603A]/40 border border-white/10 rounded-xl px-2 py-2.5 md:py-3 text-center min-w-0">
             <p className="text-[10px] font-bold text-[#A3BCA7] uppercase tracking-wider mb-1">Doação</p>
-            <p className="text-base md:text-2xl font-bold text-emerald-300">{formatCurrency(monthDonated)}</p>
+            <p className="text-sm md:text-xl font-bold text-emerald-300 whitespace-nowrap tabular-nums">{formatCurrency(monthDonated)}</p>
           </div>
-          <div className="bg-[#2E7A4A]/60 border border-[#A3BCA7]/30 rounded-xl px-3 py-3 md:py-4 text-center shadow-inner">
+          <div className="bg-[#2E7A4A]/60 border border-[#A3BCA7]/30 rounded-xl px-2 py-2.5 md:py-3 text-center shadow-inner min-w-0">
             <p className="text-[10px] font-bold text-[#A3BCA7] uppercase tracking-wider mb-1">Total</p>
-            <p className="text-base md:text-2xl font-bold text-white">{formatCurrency(totalMonthCollected)}</p>
+            <p className="text-sm md:text-xl font-bold text-white whitespace-nowrap tabular-nums">{formatCurrency(totalMonthCollected)}</p>
           </div>
         </div>
       </div>
