@@ -59,15 +59,15 @@ export function Reports() {
         <>
           {/* Summary Cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 shrink-0">
-            <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
+            <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
               <div className="flex items-center gap-2 mb-2">
-                <CheckCircle size={16} className="text-emerald-600" />
+                <CheckCircle size={16} className="text-[#2E7A4A]" />
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Recebido</p>
               </div>
-              <p className="text-2xl font-bold text-emerald-600">{formatCurrency(totalCollected)}</p>
+              <p className="text-2xl font-bold text-[#2E7A4A]">{formatCurrency(totalCollected)}</p>
               <p className="text-[10px] text-slate-400 mt-1">{allPaid.length} pagamentos confirmados</p>
             </div>
-            <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
+            <div className="bg-white p-4 rounded-2xl border border-amber-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] bg-amber-50/30">
               <div className="flex items-center gap-2 mb-2">
                 <Clock size={16} className="text-amber-500" />
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">A Receber</p>
@@ -75,7 +75,7 @@ export function Reports() {
               <p className="text-2xl font-bold text-amber-500">{formatCurrency(totalPending)}</p>
               <p className="text-[10px] text-slate-400 mt-1">{allPending.length} pendentes</p>
             </div>
-            <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
+            <div className="bg-white p-4 rounded-2xl border border-rose-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] bg-rose-50/30">
               <div className="flex items-center gap-2 mb-2">
                 <AlertTriangle size={16} className="text-rose-500" />
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Em Atraso</p>
@@ -83,31 +83,74 @@ export function Reports() {
               <p className="text-2xl font-bold text-rose-500">{formatCurrency(totalDelayed)}</p>
               <p className="text-[10px] text-slate-400 mt-1">{allDelayed.length} atrasados</p>
             </div>
-            <div className="bg-white p-4 rounded-lg border border-emerald-100 shadow-sm bg-emerald-50/30">
-              <div className="flex items-center gap-2 mb-2">
-                <DollarSign size={16} className="text-emerald-700" />
-                <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">Saldo Geral</p>
+            <div className="bg-[#1A4531] p-4 rounded-2xl border border-[#23603A] shadow-[0_4px_20px_rgba(0,0,0,0.06)] relative overflow-hidden">
+              <div className="absolute top-0 right-0 -mr-4 -mt-4 w-16 h-16 rounded-full bg-[#2E7A4A] opacity-20 blur-xl"></div>
+              <div className="flex items-center gap-2 mb-2 relative z-10">
+                <DollarSign size={16} className="text-[#A3BCA7]" />
+                <p className="text-[10px] font-bold text-[#A3BCA7] uppercase tracking-wider">Saldo Geral</p>
               </div>
-              <p className="text-2xl font-bold text-slate-800">{formatCurrency(totalReceived)}</p>
-              <p className="text-[10px] text-slate-400 mt-1">Recebido - Despesas ({formatCurrency(totalExpenses)})</p>
+              <p className="text-2xl font-bold text-white relative z-10">{formatCurrency(totalReceived)}</p>
+              <p className="text-[10px] text-[#A3BCA7] mt-1 relative z-10">Recebido - Despesas ({formatCurrency(totalExpenses)})</p>
             </div>
           </div>
 
           {/* Totals by Status per Month */}
-          <div className="bg-white border border-slate-200 rounded-lg shadow-sm flex flex-col md:min-h-0 md:flex-1 overflow-hidden">
-            <div className="px-4 py-3 border-b border-slate-100 shrink-0">
-              <h3 className="text-sm font-bold text-slate-600">Totais por Mês</h3>
+          <div className="bg-white border border-slate-100 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.03)] flex flex-col md:min-h-0 md:flex-1 overflow-hidden">
+            <div className="px-4 py-3 border-b border-slate-100 shrink-0 bg-[#F6F9F6]">
+              <h3 className="text-[12px] font-bold text-[#1A4531] uppercase tracking-wider">Totais por Mês</h3>
             </div>
             <div className="overflow-x-auto md:flex-1 md:overflow-y-auto">
-              <table className="w-full text-left border-collapse min-w-[600px]">
-                <thead className="bg-slate-50 sticky top-0 z-10">
+              
+              {/* Mobile View */}
+              <div className="md:hidden divide-y divide-slate-100">
+                {monthsWithPayments.map(month => {
+                  const monthPayments = payments.filter(p => p.month === month);
+                  const mPaid = monthPayments.filter(p => p.status === 'Pago');
+                  const mPending = monthPayments.filter(p => p.status === 'Pendente');
+                  const mDelayed = monthPayments.filter(p => p.status === 'Atrasado');
+                  return (
+                    <div key={month} className="p-4 space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-bold text-[#1A4531] capitalize">{getMonthName(month)}</span>
+                        <span className="text-[11px] font-bold text-[#2E7A4A] bg-[#EEF4F0] px-2.5 py-1 rounded-md">
+                          {formatCurrency(mPaid.reduce((a, c) => a + c.amount, 0))}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 text-center">
+                        <div className="bg-[#EEF4F0] rounded-lg p-2 border border-[#EEF4F0]">
+                          <p className="text-[9px] text-[#2F6A4F] uppercase font-bold tracking-wider mb-0.5">Pago</p>
+                          <p className="text-xs font-bold text-[#1A4531]">{mPaid.length}</p>
+                        </div>
+                        <div className="bg-amber-50 rounded-lg p-2 border border-amber-100/50">
+                          <p className="text-[9px] text-amber-600 uppercase font-bold tracking-wider mb-0.5">Pendente</p>
+                          <p className="text-xs font-bold text-amber-600">{mPending.length}</p>
+                        </div>
+                        <div className="bg-rose-50 rounded-lg p-2 border border-rose-100/50">
+                          <p className="text-[9px] text-rose-600 uppercase font-bold tracking-wider mb-0.5">Atraso</p>
+                          <p className="text-xs font-bold text-rose-600">{mDelayed.length}</p>
+                        </div>
+                      </div>
+                      <div className="flex justify-between items-center pt-2 border-t border-slate-50">
+                        <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">A Receber</span>
+                        <span className="text-xs font-bold text-amber-500">
+                          {formatCurrency(mPending.reduce((a, c) => a + c.amount, 0) + mDelayed.reduce((a, c) => a + c.amount, 0))}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Desktop View */}
+              <table className="hidden md:table w-full text-left border-collapse min-w-[600px]">
+                <thead className="bg-white sticky top-0 z-10 shadow-sm">
                   <tr>
-                    <th className="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase border-b border-slate-200">Mês</th>
-                    <th className="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase border-b border-slate-200 text-center">Pago</th>
-                    <th className="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase border-b border-slate-200 text-center">Pendente</th>
-                    <th className="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase border-b border-slate-200 text-center">Atrasado</th>
-                    <th className="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase border-b border-slate-200 text-right">Valor Pago</th>
-                    <th className="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase border-b border-slate-200 text-right">Valor Pendente</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-[#2F6A4F] uppercase tracking-wider border-b border-slate-100">Mês</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-[#2F6A4F] uppercase tracking-wider border-b border-slate-100 text-center">Pago</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-[#2F6A4F] uppercase tracking-wider border-b border-slate-100 text-center">Pendente</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-[#2F6A4F] uppercase tracking-wider border-b border-slate-100 text-center">Atrasado</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-[#2F6A4F] uppercase tracking-wider border-b border-slate-100 text-right">Valor Pago</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-[#2F6A4F] uppercase tracking-wider border-b border-slate-100 text-right">Valor Pendente</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
@@ -120,7 +163,7 @@ export function Reports() {
                       <tr key={month} className="hover:bg-slate-50">
                         <td className="px-4 py-2.5 text-xs font-bold text-slate-800 capitalize">{getMonthName(month)}</td>
                         <td className="px-4 py-2.5 text-center">
-                          <span className="text-xs font-bold text-emerald-600">{mPaid.length}</span>
+                          <span className="text-xs font-bold text-[#2E7A4A]">{mPaid.length}</span>
                         </td>
                         <td className="px-4 py-2.5 text-center">
                           <span className="text-xs font-bold text-amber-500">{mPending.length}</span>
@@ -128,7 +171,7 @@ export function Reports() {
                         <td className="px-4 py-2.5 text-center">
                           <span className="text-xs font-bold text-rose-500">{mDelayed.length}</span>
                         </td>
-                        <td className="px-4 py-2.5 text-right text-xs font-bold text-emerald-600">
+                        <td className="px-4 py-2.5 text-right text-xs font-bold text-[#2E7A4A]">
                           {formatCurrency(mPaid.reduce((a, c) => a + c.amount, 0))}
                         </td>
                         <td className="px-4 py-2.5 text-right text-xs font-bold text-amber-500">
@@ -141,14 +184,14 @@ export function Reports() {
                     <tr><td colSpan={6} className="px-4 py-8 text-center text-xs text-slate-500">Nenhum pagamento registrado.</td></tr>
                   )}
                 </tbody>
-                <tfoot className="bg-slate-50 border-t-2 border-slate-200">
+                <tfoot className="bg-[#F6F9F6] border-t border-slate-200">
                   <tr>
-                    <td className="px-4 py-2.5 text-xs font-bold text-slate-800 uppercase">Total Geral</td>
-                    <td className="px-4 py-2.5 text-center text-xs font-bold text-emerald-600">{allPaid.length}</td>
-                    <td className="px-4 py-2.5 text-center text-xs font-bold text-amber-500">{allPending.length}</td>
-                    <td className="px-4 py-2.5 text-center text-xs font-bold text-rose-500">{allDelayed.length}</td>
-                    <td className="px-4 py-2.5 text-right text-xs font-bold text-emerald-600">{formatCurrency(totalCollected)}</td>
-                    <td className="px-4 py-2.5 text-right text-xs font-bold text-amber-500">{formatCurrency(totalPending + totalDelayed)}</td>
+                    <td className="px-4 py-3 text-[11px] font-bold text-[#1A4531] uppercase tracking-wider">Total Geral</td>
+                    <td className="px-4 py-3 text-center text-xs font-bold text-[#2E7A4A]">{allPaid.length}</td>
+                    <td className="px-4 py-3 text-center text-xs font-bold text-amber-500">{allPending.length}</td>
+                    <td className="px-4 py-3 text-center text-xs font-bold text-rose-500">{allDelayed.length}</td>
+                    <td className="px-4 py-3 text-right text-xs font-bold text-[#2E7A4A]">{formatCurrency(totalCollected)}</td>
+                    <td className="px-4 py-3 text-right text-xs font-bold text-amber-500">{formatCurrency(totalPending + totalDelayed)}</td>
                   </tr>
                 </tfoot>
               </table>
@@ -157,17 +200,17 @@ export function Reports() {
 
           {/* Despesas */}
           {expenses.length > 0 && (
-            <div className="bg-white border border-slate-200 rounded-lg shadow-sm flex flex-col overflow-hidden shrink-0">
-              <div className="px-4 py-3 border-b border-slate-100">
-                <h3 className="text-sm font-bold text-slate-600">Despesas ({expenses.length})</h3>
+            <div className="bg-white border border-slate-100 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.03)] flex flex-col overflow-hidden shrink-0">
+              <div className="px-4 py-3 border-b border-slate-100 bg-[#F6F9F6]">
+                <h3 className="text-[12px] font-bold text-[#1A4531] uppercase tracking-wider">Despesas ({expenses.length})</h3>
               </div>
               <div className="overflow-x-auto md:max-h-60 md:overflow-y-auto">
                 <table className="w-full text-left border-collapse">
-                  <thead className="bg-slate-50 sticky top-0 z-10">
+                  <thead className="bg-white sticky top-0 z-10 shadow-sm">
                     <tr>
-                      <th className="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase border-b border-slate-200">Descrição</th>
-                      <th className="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase border-b border-slate-200">Data</th>
-                      <th className="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase border-b border-slate-200 text-right">Valor</th>
+                      <th className="px-4 py-3 text-[10px] font-bold text-[#2F6A4F] uppercase tracking-wider border-b border-slate-100">Descrição</th>
+                      <th className="px-4 py-3 text-[10px] font-bold text-[#2F6A4F] uppercase tracking-wider border-b border-slate-100">Data</th>
+                      <th className="px-4 py-3 text-[10px] font-bold text-[#2F6A4F] uppercase tracking-wider border-b border-slate-100 text-right">Valor</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
@@ -195,19 +238,19 @@ export function Reports() {
       {/* ─── POR MÊS ─────────────────────────────────────────── */}
       {view === 'mes' && (
         <>
-          <div className="bg-white border border-slate-200 rounded-lg shadow-sm flex flex-col md:flex-1 md:min-h-0 overflow-hidden print:shadow-none print:border-none">
+          <div className="bg-white border border-slate-100 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.03)] flex flex-col md:flex-1 md:min-h-0 overflow-hidden print:shadow-none print:border-none">
             
-            <div className="px-4 py-3 border-b border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0 print:hidden">
-              <div className="flex items-center gap-4">
-                <h3 className="text-sm font-bold text-slate-600">Filtros</h3>
+            <div className="px-4 py-3 border-b border-slate-100 bg-[#F6F9F6] flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0 print:hidden">
+              <div className="flex items-center gap-4 w-full sm:w-auto">
+                <h3 className="text-[12px] font-bold text-[#1A4531] uppercase tracking-wider">Filtros</h3>
                 <input 
                   type="month" 
                   value={selectedMonth}
                   onChange={(e) => setSelectedMonth(e.target.value)}
-                  className="text-xs border border-slate-200 rounded px-2 py-1 bg-slate-50 focus:outline-emerald-500 font-mono"
+                  className="text-xs border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-[#2E7A4A] focus:ring-1 focus:ring-[#2E7A4A] font-mono flex-1 sm:flex-none"
                 />
               </div>
-              <div className="flex space-x-1 bg-slate-100 p-1 rounded">
+              <div className="flex space-x-1 bg-[#EEF4F0] p-1 rounded-lg w-full sm:w-auto overflow-x-auto">
                 {([
                   { value: 'Pago' as const, label: 'Pagos' },
                   { value: 'Pendente' as const, label: 'Pendentes' },
@@ -216,10 +259,10 @@ export function Reports() {
                   <button
                     key={type.value}
                     onClick={() => setReportType(type.value)}
-                    className={`px-3 py-1 text-[10px] font-bold uppercase rounded transition-colors ${
+                    className={`flex-1 sm:flex-none px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all ${
                       reportType === type.value 
-                        ? 'bg-white text-slate-800 shadow-sm' 
-                        : 'text-slate-500 hover:text-slate-700'
+                        ? 'bg-white text-[#1A4531] shadow-sm' 
+                        : 'text-[#2F6A4F] hover:text-[#1A4531]'
                     }`}
                   >
                     {type.label}
@@ -234,31 +277,31 @@ export function Reports() {
               <p className="text-sm text-slate-500 capitalize font-mono mt-2">Mês ref: {getMonthName(selectedMonth)}</p>
             </div>
 
-            <div className="px-4 py-3 bg-slate-50 border-b border-slate-100 flex justify-between items-center shrink-0">
-              <h3 className="text-xs font-bold text-slate-600 uppercase tracking-widest print:hidden">
+            <div className="px-4 py-3 bg-white border-b border-slate-100 flex justify-between items-center shrink-0">
+              <h3 className="text-xs font-bold text-[#2F6A4F] uppercase tracking-widest print:hidden">
                 {reportType === 'Pago' ? 'Pagos' : reportType === 'Pendente' ? 'Pendentes' : 'Atrasados'}
               </h3>
               <div className="text-right flex items-center gap-4">
                 <span className="text-[10px] font-bold text-slate-400 uppercase">Total</span>
-                <span className="text-lg font-bold text-emerald-600">{formatCurrency(totalAmount)}</span>
+                <span className="text-lg font-bold text-[#2E7A4A]">{formatCurrency(totalAmount)}</span>
               </div>
             </div>
 
             <div className="overflow-x-auto md:flex-1 md:overflow-y-auto">
               <table className="w-full text-left border-collapse min-w-[600px]">
-                <thead className="bg-slate-50 sticky top-0 z-10 print:static">
+                <thead className="bg-white sticky top-0 z-10 print:static shadow-sm">
                   <tr>
-                    <th className="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase border-b border-slate-200">Membro</th>
-                    <th className="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase border-b border-slate-200">WhatsApp</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-[#2F6A4F] uppercase tracking-wider border-b border-slate-100">Membro</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-[#2F6A4F] uppercase tracking-wider border-b border-slate-100">WhatsApp</th>
                      {reportType === 'Pago' ? (
                       <>
-                        <th className="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase border-b border-slate-200">Data Pgto</th>
-                        <th className="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase border-b border-slate-200">Forma</th>
+                        <th className="px-4 py-3 text-[10px] font-bold text-[#2F6A4F] uppercase tracking-wider border-b border-slate-100">Data Pgto</th>
+                        <th className="px-4 py-3 text-[10px] font-bold text-[#2F6A4F] uppercase tracking-wider border-b border-slate-100">Forma</th>
                       </>
                     ) : (
-                      <th className="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase border-b border-slate-200">Vencimento</th>
+                      <th className="px-4 py-3 text-[10px] font-bold text-[#2F6A4F] uppercase tracking-wider border-b border-slate-100">Vencimento</th>
                     )}
-                    <th className="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase border-b border-slate-200 text-right">Valor</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-[#2F6A4F] uppercase tracking-wider border-b border-slate-100 text-right">Valor</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">

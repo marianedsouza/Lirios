@@ -68,17 +68,17 @@ export function MemberPortal({ memberId, onLogout }: MemberPortalProps) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-800">
+    <div className="min-h-screen bg-[#F6F9F6] flex flex-col font-sans text-slate-800">
       {/* Header */}
-      <header className="h-16 bg-emerald-900 text-white shadow-md z-10 shrink-0">
+      <header className="h-16 bg-[#1A4531] text-white shadow-md z-10 shrink-0">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 h-full flex justify-between items-center">
           <div>
-            <h1 className="text-xl font-bold tracking-tight">Lírios do Pântano</h1>
-            <p className="text-emerald-300 text-[10px] uppercase tracking-widest font-bold mt-0.5">Portal do Membro</p>
+            <h1 className="text-2xl font-medium font-serif tracking-tight">Lírios do Pântano</h1>
+            <p className="text-[#A3BCA7] text-[10px] uppercase tracking-widest font-bold mt-0.5">Portal do Membro</p>
           </div>
           <button
             onClick={onLogout}
-            className="flex items-center space-x-2 text-emerald-400 hover:text-white transition-colors"
+            className="flex items-center space-x-2 text-[#A3BCA7] hover:text-white transition-colors"
           >
             <LogOut size={16} />
             <span className="hidden sm:inline text-xs font-bold uppercase tracking-wider">Sair</span>
@@ -97,11 +97,11 @@ export function MemberPortal({ memberId, onLogout }: MemberPortalProps) {
 
         {/* Sucesso de pagamento (retorno do MP) */}
         {paymentSuccess && (
-          <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 flex items-start gap-3 shadow-sm">
-            <CheckCircle size={20} className="text-emerald-500 mt-0.5 shrink-0" />
+          <div className="bg-[#EEF4F0] border border-[#A3BCA7]/40 rounded-lg p-4 flex items-start gap-3 shadow-sm">
+            <CheckCircle size={20} className="text-[#2E7A4A] mt-0.5 shrink-0" />
             <div>
-              <h3 className="text-sm font-bold text-emerald-900">Pagamento realizado com sucesso!</h3>
-              <p className="text-emerald-700 text-xs mt-1">
+              <h3 className="text-sm font-bold text-[#1A4531]">Pagamento realizado com sucesso!</h3>
+              <p className="text-[#2F6A4F] text-xs mt-1">
                 Seu pagamento foi confirmado pelo Mercado Pago. O status abaixo já foi atualizado.
               </p>
             </div>
@@ -109,20 +109,20 @@ export function MemberPortal({ memberId, onLogout }: MemberPortalProps) {
         )}
 
         {/* Welcome Card */}
-        <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-4 sm:p-6 flex flex-col md:flex-row gap-4 sm:gap-6 items-start md:items-center">
-          <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-800 text-2xl font-bold shrink-0">
+        <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 p-4 sm:p-6 flex flex-col md:flex-row gap-4 sm:gap-6 items-start md:items-center">
+          <div className="w-16 h-16 bg-[#EEF4F0] rounded-full flex items-center justify-center text-[#1A4531] text-2xl font-bold shrink-0 shadow-inner">
             {member.name.charAt(0).toUpperCase()}
           </div>
           <div className="flex-1">
-            <h2 className="text-xl font-bold text-slate-800">Olá, {member.name}</h2>
+            <h2 className="text-xl font-bold text-[#1A4531]">Olá, {member.name}</h2>
             <div className="flex flex-wrap gap-4 mt-2 text-xs font-mono text-slate-500">
-              <div className="flex items-center"><Calendar size={14} className="mr-1.5 text-slate-400" /> Venc: Dia {member.dueDate}</div>
-              <div className="flex items-center"><MessageSquare size={14} className="mr-1.5 text-slate-400" /> {member.whatsapp}</div>
+              <div className="flex items-center"><Calendar size={14} className="mr-1.5 text-[#A3BCA7]" /> Venc: Dia {member.dueDate}</div>
+              <div className="flex items-center"><MessageSquare size={14} className="mr-1.5 text-[#A3BCA7]" /> {member.whatsapp}</div>
             </div>
           </div>
-          <div className="text-left md:text-right w-full md:w-auto p-4 bg-emerald-50 border border-emerald-100 rounded">
-            <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-widest mb-1">Sua Mensalidade</p>
-            <p className="text-2xl font-bold text-slate-800">{formatCurrency(member.monthlyFee)}</p>
+          <div className="text-left md:text-right w-full md:w-auto p-4 bg-[#EEF4F0] border border-[#A3BCA7]/30 rounded-xl">
+            <p className="text-[10px] font-bold text-[#2F6A4F] uppercase tracking-widest mb-1">Sua Mensalidade</p>
+            <p className="text-2xl font-bold text-[#1A4531]">{formatCurrency(member.monthlyFee)}</p>
           </div>
         </div>
 
@@ -145,9 +145,9 @@ export function MemberPortal({ memberId, onLogout }: MemberPortalProps) {
         )}
 
         {/* Lista de mensalidades */}
-        <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100 bg-slate-50">
-            <h3 className="text-sm font-bold text-slate-600">Seu Histórico de Mensalidades</h3>
+        <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-100 bg-[#F6F9F6]">
+            <h3 className="text-sm font-bold text-[#1A4531] uppercase tracking-wider">Seu Histórico de Mensalidades</h3>
           </div>
 
           <div className="divide-y divide-slate-100">
@@ -159,15 +159,15 @@ export function MemberPortal({ memberId, onLogout }: MemberPortalProps) {
                     <p className="font-bold text-slate-800 capitalize text-sm mb-1">{getMonthName(payment.month)}</p>
                     <div className="flex items-center">
                       {payment.status === 'Pago' ? (
-                        <span className="inline-flex items-center text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded uppercase">
+                        <span className="inline-flex items-center text-[10px] font-bold text-[#2F6A4F] bg-[#EEF4F0] px-2.5 py-1 rounded-md uppercase tracking-wider">
                           <CheckCircle size={12} className="mr-1" /> PAGO EM {payment.paymentDate?.split('-').reverse().join('/')}
                         </span>
                       ) : payment.status === 'Atrasado' ? (
-                        <span className="inline-flex items-center text-[10px] font-bold text-rose-700 bg-rose-100 px-2 py-0.5 rounded uppercase">
+                        <span className="inline-flex items-center text-[10px] font-bold text-rose-700 bg-rose-50 border border-rose-100 px-2.5 py-1 rounded-md uppercase tracking-wider">
                           <AlertTriangle size={12} className="mr-1" /> ATRASADO
                         </span>
                       ) : (
-                        <span className="inline-flex items-center text-[10px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded uppercase">
+                        <span className="inline-flex items-center text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-100 px-2.5 py-1 rounded-md uppercase tracking-wider">
                           <Clock size={12} className="mr-1" /> PENDENTE
                         </span>
                       )}
@@ -193,7 +193,7 @@ export function MemberPortal({ memberId, onLogout }: MemberPortalProps) {
                       <button
                         onClick={() => handleMercadoPago(payment.id!)}
                         disabled={mpLoading === payment.id}
-                        className="flex items-center justify-center gap-2 text-[11px] font-bold uppercase px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors w-full sm:w-auto sm:min-w-[160px]"
+                        className="flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-[0.1em] px-4 py-2.5 bg-[#2E7A4A] hover:bg-[#23603A] text-white rounded-xl shadow-[0_4px_14px_rgba(46,122,74,0.3)] disabled:opacity-50 transition-all w-full sm:w-auto sm:min-w-[160px]"
                       >
                         <CreditCard size={14} />
                         {mpLoading === payment.id ? 'Aguarde...' : 'Pagar agora'}

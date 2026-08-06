@@ -44,36 +44,37 @@ export function Dashboard() {
 
       {/* Month Label */}
       <div className="shrink-0">
-        <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-widest">
+        <p className="text-[10px] font-bold text-[#2F6A4F] uppercase tracking-widest">
           Resumo do Mês: {getMonthName(currentMonth)}
         </p>
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-2 md:gap-4 shrink-0">
-        <div className="bg-white p-3 md:p-4 rounded-lg border border-slate-200 shadow-sm">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4 shrink-0">
+        <div className="bg-white p-3 md:p-4 rounded-2xl border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Total Membros</p>
-          <p className="text-xl md:text-2xl font-bold text-slate-800">{members.length}</p>
-          <p className="text-[10px] text-emerald-600 mt-1 font-medium">● {activeMembers} Ativos</p>
+          <p className="text-xl md:text-2xl font-bold text-[#1A4531]">{members.length}</p>
+          <p className="text-[10px] text-[#2F6A4F] mt-1 font-bold">● {activeMembers} Ativos</p>
         </div>
-        <div className="bg-white p-3 md:p-4 rounded-lg border border-slate-200 shadow-sm">
+        <div className="bg-white p-3 md:p-4 rounded-2xl border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Pagos</p>
-          <p className="text-xl md:text-2xl font-bold text-emerald-600">{paidPayments.length}</p>
-          <div className="w-full bg-slate-100 h-1.5 mt-2 rounded-full">
-            <div className="bg-emerald-500 h-1.5 rounded-full" style={{ width: `${progressPercent}%` }}></div>
+          <p className="text-xl md:text-2xl font-bold text-[#2E7A4A]">{paidPayments.length}</p>
+          <div className="w-full bg-[#EEF4F0] h-1.5 mt-2 rounded-full overflow-hidden">
+            <div className="bg-[#2E7A4A] h-1.5 rounded-full" style={{ width: `${progressPercent}%` }}></div>
           </div>
         </div>
-        <div className="bg-white p-2 md:p-3 rounded-lg border border-amber-200/70 shadow-sm">
+        <div className="bg-white p-2 md:p-3 rounded-2xl border border-amber-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] bg-amber-50/30">
           <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider mb-0.5">Pendentes</p>
           <p className="text-lg md:text-2xl font-bold text-amber-600">{pendingPayments.length}</p>
         </div>
-        <div className="bg-white p-2 md:p-3 rounded-lg border border-rose-200/70 shadow-sm">
+        <div className="bg-white p-2 md:p-3 rounded-2xl border border-rose-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] bg-rose-50/30">
           <p className="text-[10px] font-bold text-rose-600 uppercase tracking-wider mb-0.5">Atrasados</p>
           <p className="text-lg md:text-2xl font-bold text-rose-600">{delayedPayments.length}</p>
         </div>
-        <div className="col-span-2 lg:col-span-1 bg-emerald-600 p-3 md:p-4 rounded-lg border border-emerald-700 shadow-sm">
-          <p className="text-[10px] font-bold text-emerald-100 uppercase tracking-wider mb-1">Arrecadado</p>
-          <p className="text-xl md:text-2xl font-bold text-white">{formatCurrency(collectedAmount)}</p>
+        <div className="col-span-2 lg:col-span-1 bg-[#1A4531] p-3 md:p-4 rounded-2xl border border-[#23603A] shadow-[0_4px_20px_rgba(0,0,0,0.06)] relative overflow-hidden">
+          <div className="absolute top-0 right-0 -mr-4 -mt-4 w-16 h-16 rounded-full bg-[#2E7A4A] opacity-20 blur-xl"></div>
+          <p className="text-[10px] font-bold text-[#A3BCA7] uppercase tracking-wider mb-1 relative z-10">Arrecadado</p>
+          <p className="text-xl md:text-2xl font-bold text-white relative z-10">{formatCurrency(collectedAmount)}</p>
         </div>
       </div>
 
@@ -81,9 +82,9 @@ export function Dashboard() {
       <div className="flex-1 flex flex-col lg:flex-row gap-4 md:gap-6 min-h-0">
 
         {/* Monitor de Pagamentos — cards no mobile */}
-        <div className="lg:hidden bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
-          <div className="px-4 py-3 border-b border-slate-100">
-            <h3 className="text-sm font-bold text-slate-600">Monitor de Pagamentos Recentes</h3>
+        <div className="lg:hidden bg-white border border-slate-100 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.03)] overflow-hidden">
+          <div className="px-4 py-3 border-b border-slate-100 bg-[#F6F9F6]">
+            <h3 className="text-[12px] font-bold text-[#1A4531] uppercase tracking-wider">Monitor de Pagamentos Recentes</h3>
           </div>
           <div className="divide-y divide-slate-50">
             {sortedPayments.map(payment => {
@@ -110,18 +111,18 @@ export function Dashboard() {
         </div>
 
         {/* Member/Payment List (70%) — tabela no desktop */}
-        <div className="hidden lg:flex lg:w-2/3 bg-white border border-slate-200 rounded-lg shadow-sm flex-col min-h-[300px] overflow-hidden">
-          <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between shrink-0">
-            <h3 className="text-sm font-bold text-slate-600">Monitor de Pagamentos Recentes</h3>
+        <div className="hidden lg:flex lg:w-2/3 bg-white border border-slate-100 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.03)] flex-col min-h-[300px] overflow-hidden">
+          <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between shrink-0 bg-[#F6F9F6]">
+            <h3 className="text-[12px] font-bold text-[#1A4531] uppercase tracking-wider">Monitor de Pagamentos Recentes</h3>
           </div>
           <div className="flex-1 overflow-y-auto overflow-x-auto">
             <table className="w-full text-left border-collapse min-w-[500px]">
-              <thead className="bg-slate-50 sticky top-0 z-10">
+              <thead className="bg-white sticky top-0 z-10 shadow-sm">
                 <tr>
-                  <th className="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase border-b border-slate-200">Membro</th>
-                  <th className="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase border-b border-slate-200">Data/Pgto</th>
-                  <th className="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase border-b border-slate-200">Valor</th>
-                  <th className="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase border-b border-slate-200">Status</th>
+                  <th className="px-4 py-3 text-[10px] font-bold text-[#2F6A4F] uppercase tracking-wider border-b border-slate-100">Membro</th>
+                  <th className="px-4 py-3 text-[10px] font-bold text-[#2F6A4F] uppercase tracking-wider border-b border-slate-100">Data/Pgto</th>
+                  <th className="px-4 py-3 text-[10px] font-bold text-[#2F6A4F] uppercase tracking-wider border-b border-slate-100">Valor</th>
+                  <th className="px-4 py-3 text-[10px] font-bold text-[#2F6A4F] uppercase tracking-wider border-b border-slate-100">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
@@ -154,18 +155,18 @@ export function Dashboard() {
 
         {/* Quick View / Analytics (30%) */}
         <div className="lg:w-1/3 flex flex-col space-y-4 shrink-0">
-          <div className="bg-white border border-slate-200 rounded-lg p-4 flex-1 shadow-sm flex flex-col">
-            <h3 className="text-sm font-bold text-slate-600 mb-4">Volume por Status</h3>
-            <div className="space-y-4 flex-1">
-              <div className="flex h-8 w-full rounded overflow-hidden">
-                <div className="bg-emerald-500" style={{ width: `${(paidPayments.length / Math.max(1, currentMonthPayments.length)) * 100}%` }} title="Pagos"></div>
+          <div className="bg-white border border-slate-100 rounded-2xl p-4 flex-1 shadow-[0_8px_30px_rgb(0,0,0,0.03)] flex flex-col">
+            <h3 className="text-[12px] font-bold text-[#1A4531] uppercase tracking-wider mb-4 pb-2 border-b border-slate-100">Volume por Status</h3>
+            <div className="space-y-4 flex-1 mt-2">
+              <div className="flex h-8 w-full rounded-xl overflow-hidden shadow-inner">
+                <div className="bg-[#2E7A4A]" style={{ width: `${(paidPayments.length / Math.max(1, currentMonthPayments.length)) * 100}%` }} title="Pagos"></div>
                 <div className="bg-amber-400" style={{ width: `${(pendingPayments.length / Math.max(1, currentMonthPayments.length)) * 100}%` }} title="Pendentes"></div>
                 <div className="bg-rose-500" style={{ width: `${(delayedPayments.length / Math.max(1, currentMonthPayments.length)) * 100}%` }} title="Atrasados"></div>
               </div>
-              <div className="flex justify-between text-[10px] text-slate-500">
-                <span className="flex items-center gap-1"><span className="w-2 h-2 bg-emerald-500 rounded-full inline-block"></span> Pagos</span>
-                <span className="flex items-center gap-1"><span className="w-2 h-2 bg-amber-400 rounded-full inline-block"></span> Pendentes</span>
-                <span className="flex items-center gap-1"><span className="w-2 h-2 bg-rose-500 rounded-full inline-block"></span> Atrasados</span>
+              <div className="flex justify-between text-[10px] text-[#2F6A4F] font-bold uppercase tracking-wider pt-2">
+                <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-[#2E7A4A] rounded-full inline-block shadow-sm"></span> Pagos</span>
+                <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-amber-400 rounded-full inline-block shadow-sm"></span> Pendentes</span>
+                <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-rose-500 rounded-full inline-block shadow-sm"></span> Atrasados</span>
               </div>
             </div>
           </div>
