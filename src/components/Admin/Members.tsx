@@ -3,7 +3,7 @@ import { useAppStore } from '../../store/useStore';
 import { Member } from '../../types';
 import { MemberForm } from './MemberForm';
 import { MemberDetails } from './MemberDetails';
-import { BookOpen, Copy, Check, UserPlus, Trash2 } from 'lucide-react';
+import { BookOpen, Copy, Check, Share2, UserPlus, Trash2 } from 'lucide-react';
 import { GuidelinesAccordion } from '../GuidelinesAccordion';
 
 type FilterType = 'Todos' | 'Ativos' | 'Inativos' | 'Pendentes' | 'Dirigentes' | 'Com Atraso';
@@ -30,6 +30,28 @@ export function Members() {
     navigator.clipboard.writeText(link);
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
+  };
+
+  const handleShareInvite = async () => {
+    const link = `${window.location.origin}/convite`;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Convite - Lírios do Pântano',
+          text: 'Cadastre-se no grupo de membros da Casa de Amparo Lírios do Pântano!',
+          url: link,
+        });
+      } catch (e) {
+        if ((e as any)?.name === 'AbortError') return;
+        await navigator.clipboard.writeText(link);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2500);
+      }
+    } else {
+      await navigator.clipboard.writeText(link);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    }
   };
 
   const filteredMembers = members
@@ -84,13 +106,22 @@ export function Members() {
       {/* Barra de ações */}
       <div className="flex flex-wrap justify-between items-center gap-3 shrink-0">
         {/* Botão link de convite */}
-        <button
-          onClick={handleCopyInvite}
-          className="flex items-center gap-2 px-4 py-2.5 bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold rounded hover:bg-blue-100 transition-colors"
-        >
-          {copied ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
-          {copied ? 'Link copiado!' : 'Copiar link de convite'}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleCopyInvite}
+            className="flex items-center gap-2 px-4 py-2.5 bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold rounded hover:bg-blue-100 transition-colors"
+          >
+            {copied ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
+            {copied ? 'Link copiado!' : 'Copiar link'}
+          </button>
+          <button
+            onClick={handleShareInvite}
+            className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 text-white text-xs font-bold rounded shadow hover:bg-emerald-700 transition-colors"
+          >
+            <Share2 size={14} />
+            Compartilhar
+          </button>
+        </div>
         <button
           onClick={() => handleOpenForm()}
           className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 text-white text-xs font-bold rounded shadow hover:bg-emerald-700 transition-colors"
@@ -119,7 +150,7 @@ export function Members() {
       {/* Lista de membros */}
       <div className="bg-white border border-slate-200 rounded-lg shadow-sm flex flex-col md:flex-1 md:min-h-0 overflow-hidden">
         <div className="px-4 py-3 border-b border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shrink-0">
-          <h3 className="text-sm font-bold text-slate-600">Cadastro de Membros</h3>
+          <h3 className="text-sm font-bold text-slate-600">Lista de Membros</h3>
           <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
             <input
               type="text"

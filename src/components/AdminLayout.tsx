@@ -20,7 +20,7 @@ export function AdminLayout({ onLogout }: AdminLayoutProps) {
   const navigation = [
     { name: 'Painel Geral', id: 'dashboard', icon: LayoutDashboard },
     { name: 'Caixa e Despesas', id: 'caixa', icon: Wallet },
-    { name: 'Cadastro de Membros', id: 'members', icon: Users },
+    { name: 'Membros', id: 'members', icon: Users },
     { name: 'Relatórios', id: 'reports', icon: FileText },
     { name: 'Configurações', id: 'settings', icon: SettingsIcon },
   ];
@@ -40,7 +40,7 @@ export function AdminLayout({ onLogout }: AdminLayoutProps) {
     switch (activeTab) {
       case 'dashboard': return 'Dashboard Administrativo';
       case 'caixa': return 'Controle de Caixa e Despesas';
-      case 'members': return 'Cadastro e Controle de Membros';
+      case 'members': return 'Lista de Membros';
       case 'reports': return 'Relatórios e Exportações';
       case 'settings': return 'Configurações do Sistema';
       default: return 'Dashboard Administrativo';
