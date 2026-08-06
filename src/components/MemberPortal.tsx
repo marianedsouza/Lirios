@@ -20,6 +20,7 @@ export function MemberPortal({ memberId, onLogout }: MemberPortalProps) {
   const [donationAmount, setDonationAmount] = useState('');
   const [donationLoading, setDonationLoading] = useState(false);
   const [donationError, setDonationError] = useState<string | null>(null);
+  const [donationOpen, setDonationOpen] = useState(false);
 
   // Detecta retorno do Mercado Pago via query string ?payment=success
   useEffect(() => {
@@ -306,73 +307,82 @@ export function MemberPortal({ memberId, onLogout }: MemberPortalProps) {
           </div>
         </div>
 
-        {/* Doação */}
+        {/* Doação — acordeão fechado por padrão */}
         <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100 bg-[#F6F9F6] flex items-center gap-2">
-            <HeartHandshake size={16} className="text-[#2E7A4A]" />
-            <h3 className="text-sm font-bold text-[#1A4531] uppercase tracking-wider">Sua Doação</h3>
-          </div>
-
-          <div className="p-4 sm:p-6">
-            <p className="text-xs text-slate-500 mb-4">
-              Contribua com um valor livre para a casa. O pagamento é feito com segurança pelo Mercado Pago.
-            </p>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
-              <div>
-                <label className="block text-[10px] font-bold text-[#2F6A4F] uppercase tracking-widest mb-1.5">
-                  Valor da doação
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={donationAmount}
-                  onChange={(e) => setDonationAmount(e.target.value)}
-                  placeholder="0,00"
-                  className="w-full px-3 py-2.5 border border-slate-200 rounded-xl bg-white text-sm font-bold text-slate-800 focus:outline-[#2E7A4A] focus:ring-1 focus:ring-[#2E7A4A]"
-                />
-              </div>
-              <button
-                onClick={handleDonation}
-                disabled={donationLoading}
-                className="flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-[0.1em] px-4 py-2.5 bg-[#00A8E8] hover:bg-[#0090C8] text-white rounded-xl shadow disabled:opacity-50 transition-all w-full"
-              >
-                <HeartHandshake size={14} />
-                {donationLoading ? 'Aguarde...' : 'Fazer doação'}
-              </button>
+          <button
+            type="button"
+            onClick={() => setDonationOpen(o => !o)}
+            className="w-full px-6 py-4 border-b border-slate-100 bg-[#F6F9F6] flex items-center justify-between gap-2 text-left hover:bg-[#F0F6F1] transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <HeartHandshake size={16} className="text-[#2E7A4A]" />
+              <h3 className="text-sm font-bold text-[#1A4531] uppercase tracking-wider">Sua Doação</h3>
             </div>
+            <ChevronDown size={18} className={`text-slate-400 transition-transform shrink-0 ${donationOpen ? 'rotate-180' : ''}`} />
+          </button>
 
-            {donationError && (
-              <div className="mt-3 bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700 font-medium">
-                {donationError}
-              </div>
-            )}
+          {donationOpen && (
+            <div className="p-4 sm:p-6">
+              <p className="text-xs text-slate-500 mb-4">
+                Contribua com um valor livre para a casa. O pagamento é feito com segurança pelo Mercado Pago.
+              </p>
 
-            {memberDonations.length > 0 && (
-              <div className="mt-5 pt-5 border-t border-slate-100">
-                <p className="text-[10px] font-bold text-[#2F6A4F] uppercase tracking-widest mb-3">
-                  Doações confirmadas ({memberDonations.length})
-                </p>
-                <div className="space-y-2">
-                  {memberDonations.map(donation => (
-                    <div key={donation.id} className="flex items-center justify-between px-3 py-2.5 bg-[#F6F9F6] border border-[#EEF4F0] rounded-lg">
-                      <div>
-                        <p className="text-xs font-bold text-slate-800 capitalize">{getMonthName(donation.month)}</p>
-                        <p className="text-[10px] text-slate-400 font-mono">{donation.date.split('-').reverse().join('/')}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-bold text-[#2E7A4A]">{formatCurrency(donation.amount)}</span>
-                        <span className="inline-flex items-center text-[10px] font-bold text-[#2F6A4F] bg-[#EEF4F0] px-2 py-0.5 rounded-md uppercase tracking-wider">
-                          <CheckCircle size={11} className="mr-1" /> Pago
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
+                <div>
+                  <label className="block text-[10px] font-bold text-[#2F6A4F] uppercase tracking-widest mb-1.5">
+                    Valor da doação
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={donationAmount}
+                    onChange={(e) => setDonationAmount(e.target.value)}
+                    placeholder="0,00"
+                    className="w-full px-3 py-2.5 border border-slate-200 rounded-xl bg-white text-sm font-bold text-slate-800 focus:outline-[#2E7A4A] focus:ring-1 focus:ring-[#2E7A4A]"
+                  />
                 </div>
+                <button
+                  onClick={handleDonation}
+                  disabled={donationLoading}
+                  className="flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-[0.1em] px-4 py-2.5 bg-[#00A8E8] hover:bg-[#0090C8] text-white rounded-xl shadow disabled:opacity-50 transition-all w-full"
+                >
+                  <HeartHandshake size={14} />
+                  {donationLoading ? 'Aguarde...' : 'Fazer doação'}
+                </button>
               </div>
-            )}
-          </div>
+
+              {donationError && (
+                <div className="mt-3 bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700 font-medium">
+                  {donationError}
+                </div>
+              )}
+
+              {memberDonations.length > 0 && (
+                <div className="mt-5 pt-5 border-t border-slate-100">
+                  <p className="text-[10px] font-bold text-[#2F6A4F] uppercase tracking-widest mb-3">
+                    Doações confirmadas ({memberDonations.length})
+                  </p>
+                  <div className="space-y-2">
+                    {memberDonations.map(donation => (
+                      <div key={donation.id} className="flex items-center justify-between px-3 py-2.5 bg-[#F6F9F6] border border-[#EEF4F0] rounded-lg">
+                        <div>
+                          <p className="text-xs font-bold text-slate-800 capitalize">{getMonthName(donation.month)}</p>
+                          <p className="text-[10px] text-slate-400 font-mono">{donation.date.split('-').reverse().join('/')}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-bold text-[#2E7A4A]">{formatCurrency(donation.amount)}</span>
+                          <span className="inline-flex items-center text-[10px] font-bold text-[#2F6A4F] bg-[#EEF4F0] px-2 py-0.5 rounded-md uppercase tracking-wider">
+                            <CheckCircle size={11} className="mr-1" /> Pago
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </main>
     </div>
