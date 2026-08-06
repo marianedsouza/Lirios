@@ -137,6 +137,7 @@ export interface DonationData {
   description: string;
   amount: number;
   date: string;
+  month: string;
   status: string;
 }
 
@@ -145,4 +146,5 @@ export const donationsApi = {
   create: (data: Omit<DonationData, 'id'>) => request<DonationData>('/donations', { method: 'POST', body: JSON.stringify(data) }),
   update: (id: string, data: Partial<DonationData>) => request<DonationData>(`/donations/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   remove: (id: string) => request<{ ok: boolean }>(`/donations/${id}`, { method: 'DELETE' }),
+  mercadopago: (id: string) => request<{ init_point: string }>(`/donations/${id}/mercadopago`, { method: 'POST' }),
 };

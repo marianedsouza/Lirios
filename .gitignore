@@ -12,3 +12,8 @@ coverage/
 
 # bundle gerado da função serverless (sourcemap não precisa ir pro repo)
 api/index.js.map
+
+# banco e cache locais
+dev.db
+.vite/
+

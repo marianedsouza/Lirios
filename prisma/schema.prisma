@@ -88,6 +88,7 @@ model Donation {
   description String   @default("")
   amount      Float
   date        String
+  month       String   @default("")
   status      String   @default("Pendente")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")

@@ -80,7 +80,12 @@ async function initDatabase() {
   await prisma!.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "payment_receipts" ("id" TEXT NOT NULL PRIMARY KEY, "payment_id" TEXT NOT NULL, "member_id" TEXT NOT NULL, "description" TEXT NOT NULL, "amount" REAL NOT NULL, "paid_at" TEXT NOT NULL, "status" TEXT NOT NULL DEFAULT 'Pendente', "reviewed_by" TEXT, "reviewed_at" TEXT, "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, "updated_at" TIMESTAMP NOT NULL, CONSTRAINT "payment_receipts_payment_id_fkey" FOREIGN KEY ("payment_id") REFERENCES "payments" ("id") ON DELETE CASCADE ON UPDATE CASCADE, CONSTRAINT "payment_receipts_member_id_fkey" FOREIGN KEY ("member_id") REFERENCES "members" ("id") ON DELETE CASCADE ON UPDATE CASCADE)`);
   await prisma!.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "expenses" ("id" TEXT NOT NULL PRIMARY KEY, "description" TEXT NOT NULL, "amount" REAL NOT NULL, "date" TEXT NOT NULL, "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, "updated_at" TIMESTAMP NOT NULL)`);
   await prisma!.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "app_settings" ("id" TEXT NOT NULL PRIMARY KEY, "pix_key" TEXT NOT NULL DEFAULT '', "bank_name" TEXT NOT NULL DEFAULT '', "account_name" TEXT NOT NULL DEFAULT '', "default_monthly_fee" REAL NOT NULL DEFAULT 50, "default_due_date" INTEGER NOT NULL DEFAULT 10, "house_guidelines" TEXT NOT NULL DEFAULT '', "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, "updated_at" TIMESTAMP NOT NULL)`);
-  await prisma!.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "donations" ("id" TEXT NOT NULL PRIMARY KEY, "member_id" TEXT, "donor_name" TEXT NOT NULL DEFAULT '', "description" TEXT NOT NULL DEFAULT '', "amount" REAL NOT NULL, "date" TEXT NOT NULL, "status" TEXT NOT NULL DEFAULT 'Pendente', "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, "updated_at" TIMESTAMP NOT NULL, CONSTRAINT "donations_member_id_fkey" FOREIGN KEY ("member_id") REFERENCES "members" ("id") ON DELETE SET NULL ON UPDATE CASCADE)`);
+  await prisma!.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "donations" ("id" TEXT NOT NULL PRIMARY KEY, "member_id" TEXT, "donor_name" TEXT NOT NULL DEFAULT '', "description" TEXT NOT NULL DEFAULT '', "amount" REAL NOT NULL, "date" TEXT NOT NULL, "month" TEXT NOT NULL DEFAULT '', "status" TEXT NOT NULL DEFAULT 'Pendente', "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, "updated_at" TIMESTAMP NOT NULL, CONSTRAINT "donations_member_id_fkey" FOREIGN KEY ("member_id") REFERENCES "members" ("id") ON DELETE SET NULL ON UPDATE CASCADE)`);
+  try {
+    await prisma!.$executeRawUnsafe(`ALTER TABLE "donations" ADD COLUMN IF NOT EXISTS "month" TEXT NOT NULL DEFAULT ''`);
+  } catch (e: any) {
+    // Coluna "month" já existe (SQLite não suporta "IF NOT EXISTS" em ADD COLUMN)
+  }
 }
 
 async function seed() {
@@ -397,14 +402,25 @@ app.post("/api/webhooks/mercadopago", async (req, res) => {
         const paymentInfo = await mpPayment.get({ id: paymentId });
 
         if (paymentInfo.status === "approved" && paymentInfo.external_reference) {
-          await prisma!.payment.update({
-            where: { id: paymentInfo.external_reference },
-            data: {
-              status: "Pago",
-              method: paymentInfo.payment_method_id || "Mercado Pago",
-              paymentDate: new Date().toISOString(),
-            },
-          });
+          const ref = paymentInfo.external_reference;
+          if (ref.startsWith("donation:")) {
+            await prisma!.donation.update({
+              where: { id: ref.slice("donation:".length) },
+              data: {
+                status: "Pago",
+                date: new Date().toISOString().split("T")[0],
+              },
+            });
+          } else {
+            await prisma!.payment.update({
+              where: { id: ref },
+              data: {
+                status: "Pago",
+                method: paymentInfo.payment_method_id || "Mercado Pago",
+                paymentDate: new Date().toISOString(),
+              },
+            });
+          }
         }
       }
     }
@@ -556,6 +572,58 @@ app.delete("/api/donations/:id", async (req, res) => {
     res.json({ ok: true });
   } catch (e: any) {
     res.status(500).json({ error: e.message });
+  }
+});
+
+// ─── Mercado Pago — gerar link de pagamento de doação ──────
+app.post("/api/donations/:id/mercadopago", async (req, res) => {
+  try {
+    const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
+    if (!accessToken) {
+      return res.status(500).json({ error: "Mercado Pago não configurado (Access Token ausente)" });
+    }
+
+    const donation = await prisma!.donation.findUnique({
+      where: { id: req.params.id },
+      include: { member: true },
+    });
+
+    if (!donation) {
+      return res.status(404).json({ error: "Doação não encontrada" });
+    }
+
+    const memberName = donation.member?.name || donation.donorName || "Doador";
+    const monthLabel = donation.month || donation.date.slice(0, 7) || "";
+
+    const client = new MercadoPagoConfig({ accessToken, options: { timeout: 5000 } });
+    const preference = new Preference(client);
+
+    const pref = await preference.create({
+      body: {
+        items: [
+          {
+            id: donation.id,
+            title: `Doação ${monthLabel} - ${memberName}`,
+            quantity: 1,
+            unit_price: donation.amount,
+            currency_id: "BRL",
+          },
+        ],
+        external_reference: `donation:${donation.id}`,
+        back_urls: {
+          success: `${process.env.APP_URL || 'http://localhost:3000'}/members/${donation.memberId || ''}`,
+          failure: `${process.env.APP_URL || 'http://localhost:3000'}/members/${donation.memberId || ''}`,
+          pending: `${process.env.APP_URL || 'http://localhost:3000'}/members/${donation.memberId || ''}`,
+        },
+        auto_return: "approved",
+        notification_url: `${process.env.APP_URL || 'http://localhost:3000'}/api/webhooks/mercadopago`,
+      },
+    });
+
+    res.json({ init_point: pref.init_point });
+  } catch (e: any) {
+    console.error("Erro MP doação:", e);
+    res.status(500).json({ error: e.message || "Erro ao gerar link do Mercado Pago" });
   }
 });
 

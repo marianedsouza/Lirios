@@ -1,69 +1,39 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useAppStore } from '../../store/useStore';
 import { Donation } from '../../types';
-import { formatCurrency } from '../../lib/utils';
-import { HeartHandshake, Check, Trash2 } from 'lucide-react';
+import { formatCurrency, getMonthName } from '../../lib/utils';
+import { HeartHandshake, Check, Trash2, User } from 'lucide-react';
 
 export function Donations() {
-  const { members, donations, addDonation, updateDonation, deleteDonation } = useAppStore();
-
-  const [form, setForm] = useState({
-    amount: '',
-    date: new Date().toISOString().split('T')[0],
-    memberId: '',
-    donorName: '',
-    description: '',
-    status: 'Pendente' as Donation['status'],
-  });
+  const { members, donations, updateDonation, deleteDonation } = useAppStore();
 
   const paidDonations = donations.filter(d => d.status === 'Pago');
   const pendingDonations = donations.filter(d => d.status === 'Pendente');
   const totalPaid = paidDonations.reduce((acc, d) => acc + d.amount, 0);
   const totalPending = pendingDonations.reduce((acc, d) => acc + d.amount, 0);
 
-  const donorLabel = (donation: Donation) => {
-    if (donation.memberId) {
-      const member = members.find(m => m.id === donation.memberId);
-      if (member) return member.name;
-    }
-    return donation.donorName || 'Doador anônimo';
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const amount = parseFloat(form.amount.replace(',', '.'));
-    if (!amount || amount <= 0) return;
-
-    await addDonation({
-      amount,
-      date: form.date,
-      memberId: form.memberId || null,
-      donorName: form.memberId ? '' : form.donorName.trim(),
-      description: form.description.trim(),
-      status: form.status,
+  const grouped = members
+    .map(member => ({
+      member,
+      list: donations
+        .filter(d => d.memberId === member.id)
+        .sort((a, b) => b.month.localeCompare(a.month)),
+    }))
+    .filter(g => g.list.length > 0)
+    .sort((a, b) => {
+      const aTotal = a.list.reduce((acc, d) => acc + d.amount, 0);
+      const bTotal = b.list.reduce((acc, d) => acc + d.amount, 0);
+      return bTotal - aTotal;
     });
 
-    setForm({
-      amount: '',
-      date: new Date().toISOString().split('T')[0],
-      memberId: '',
-      donorName: '',
-      description: '',
-      status: 'Pendente',
-    });
-  };
+  const anonymous = donations.filter(d => !d.memberId);
 
   const toggleStatus = async (donation: Donation) => {
     await updateDonation(donation.id, { status: donation.status === 'Pago' ? 'Pendente' : 'Pago' });
   };
 
   const handleDelete = async (donation: Donation) => {
-    if (!window.confirm(`Excluir doação de ${formatCurrency(donation.amount)}?`)) return;
+    if (!window.confirm(`Excluir doação de ${formatCurrency(donation.amount)} (${getMonthName(donation.month)})?`)) return;
     await deleteDonation(donation.id);
   };
 
@@ -72,9 +42,9 @@ export function Donations() {
       {/* Resumo */}
       <div className="grid grid-cols-2 gap-3 md:gap-4 shrink-0">
         <div className="bg-white p-3 md:p-4 rounded-2xl border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Doações Recebidas</p>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Doações Confirmadas</p>
           <p className="text-xl md:text-2xl font-bold text-[#2E7A4A]">{formatCurrency(totalPaid)}</p>
-          <p className="text-[10px] text-slate-400 mt-1">{paidDonations.length} confirmada(s)</p>
+          <p className="text-[10px] text-slate-400 mt-1">{paidDonations.length} doação(ões)</p>
         </div>
         <div className="bg-white p-3 md:p-4 rounded-2xl border border-amber-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] bg-amber-50/30">
           <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider mb-1">Pendentes</p>
@@ -83,151 +53,130 @@ export function Donations() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-        {/* Formulário de registro */}
-        <div className="bg-white border border-slate-100 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.03)] p-5 h-fit">
-          <div className="flex items-center gap-2 mb-4 pb-2 border-b border-slate-100">
-            <HeartHandshake size={18} className="text-[#2E7A4A]" />
-            <h3 className="text-[12px] font-bold text-[#1A4531] uppercase tracking-wider">Registrar Doação</h3>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Valor *</label>
-              <input
-                required
-                type="number"
-                step="0.01"
-                min="0"
-                name="amount"
-                value={form.amount}
-                onChange={handleChange}
-                placeholder="0,00"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Data</label>
-              <input
-                type="date"
-                name="date"
-                value={form.date}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Membro (opcional)</label>
-              <select
-                name="memberId"
-                value={form.memberId}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
-              >
-                <option value="">— Doação avulsa —</option>
-                {members.map(member => (
-                  <option key={member.id} value={member.id}>{member.name}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Nome do doador (avulsa)</label>
-              <input
-                type="text"
-                name="donorName"
-                value={form.donorName}
-                onChange={handleChange}
-                placeholder="Ex: Visitante da casa"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
-              <input
-                type="text"
-                name="description"
-                value={form.description}
-                onChange={handleChange}
-                placeholder="Ex: Doação para reforma"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-              <select
-                name="status"
-                value={form.status}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
-              >
-                <option value="Pendente">Pendente</option>
-                <option value="Pago">Pago</option>
-              </select>
-            </div>
-
-            <button
-              type="submit"
-              className="w-full py-2.5 bg-[#2E7A4A] hover:bg-[#23603A] text-white text-xs font-bold uppercase tracking-wider rounded-lg shadow transition-colors flex items-center justify-center gap-2"
-            >
-              <HeartHandshake size={14} />
-              Registrar Doação
-            </button>
-          </form>
+      {/* Membros que doaram */}
+      <div className="bg-white border border-slate-100 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.03)] overflow-hidden">
+        <div className="px-4 py-3 border-b border-slate-100 bg-[#F6F9F6] flex items-center justify-between">
+          <h3 className="text-[12px] font-bold text-[#1A4531] uppercase tracking-wider flex items-center gap-2">
+            <HeartHandshake size={14} className="text-[#2E7A4A]" />
+            Membros que Doaram ({grouped.length})
+          </h3>
         </div>
 
-        {/* Lista de doações */}
-        <div className="lg:col-span-2 bg-white border border-slate-100 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.03)] overflow-hidden">
-          <div className="px-4 py-3 border-b border-slate-100 bg-[#F6F9F6]">
-            <h3 className="text-[12px] font-bold text-[#1A4531] uppercase tracking-wider">Histórico de Doações ({donations.length})</h3>
-          </div>
-
-          <div className="divide-y divide-slate-50">
-            {donations.map(donation => (
-              <div key={donation.id} className="px-4 py-3 flex items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="text-xs font-bold text-slate-800 truncate">{donorLabel(donation)}</p>
-                  <p className="text-[10px] text-slate-400 font-mono truncate">
-                    {donation.date.split('-').reverse().join('/')}
-                    {donation.description ? ` · ${donation.description}` : ''}
-                  </p>
+        <div className="divide-y divide-slate-50">
+          {grouped.map(({ member, list }) => {
+            const total = list.reduce((acc, d) => acc + d.amount, 0);
+            const paid = list.filter(d => d.status === 'Pago').length;
+            return (
+              <div key={member.id} className="px-4 py-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-800 text-xs font-bold shrink-0">
+                      {member.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-slate-800 truncate">{member.name}</p>
+                      <p className="text-[10px] text-slate-400">{list.length} doação(ões) · {paid} confirmada(s)</p>
+                    </div>
+                  </div>
+                  <p className="text-sm font-bold text-[#2E7A4A] shrink-0">{formatCurrency(total)}</p>
                 </div>
-                <div className="text-right shrink-0">
-                  <p className="text-xs font-bold text-slate-800 mb-1">{formatCurrency(donation.amount)}</p>
-                  <div className="flex items-center justify-end gap-2">
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                      donation.status === 'Pago' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
-                    }`}>
-                      {donation.status.toUpperCase()}
-                    </span>
-                    <button
-                      onClick={() => toggleStatus(donation)}
-                      className="text-emerald-600 hover:text-emerald-800 transition-colors"
-                      title={donation.status === 'Pago' ? 'Marcar como pendente' : 'Marcar como pago'}
-                    >
-                      <Check size={14} />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(donation)}
-                      className="text-rose-400 hover:text-rose-600 transition-colors"
-                      title="Excluir doação"
-                    >
-                      <Trash2 size={14} />
-                    </button>
+
+                <div className="mt-3 space-y-2">
+                  {list.map(donation => (
+                    <div key={donation.id} className="flex items-center justify-between gap-3 pl-11">
+                      <div className="min-w-0">
+                        <p className="text-[11px] font-bold text-slate-700 capitalize">{getMonthName(donation.month)}</p>
+                        <p className="text-[10px] text-slate-400 font-mono">
+                          {donation.date.split('-').reverse().join('/')}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-xs font-bold text-slate-800">{formatCurrency(donation.amount)}</span>
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                          donation.status === 'Pago' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                        }`}>
+                          {donation.status.toUpperCase()}
+                        </span>
+                        <button
+                          onClick={() => toggleStatus(donation)}
+                          className="text-emerald-600 hover:text-emerald-800 transition-colors"
+                          title={donation.status === 'Pago' ? 'Marcar como pendente' : 'Marcar como pago'}
+                        >
+                          <Check size={14} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(donation)}
+                          className="text-rose-400 hover:text-rose-600 transition-colors"
+                          title="Excluir doação"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+
+          {anonymous.length > 0 && (
+            <div className="px-4 py-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-500 text-xs font-bold shrink-0">
+                    <User size={14} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-slate-800 truncate">Doadores avulsos</p>
+                    <p className="text-[10px] text-slate-400">{anonymous.length} doação(ões)</p>
                   </div>
                 </div>
+                <p className="text-sm font-bold text-[#2E7A4A] shrink-0">
+                  {formatCurrency(anonymous.reduce((acc, d) => acc + d.amount, 0))}
+                </p>
               </div>
-            ))}
-            {donations.length === 0 && (
-              <div className="px-4 py-10 text-center text-xs text-slate-500">
-                Nenhuma doação registrada ainda.
+              <div className="mt-3 space-y-2">
+                {anonymous.map(donation => (
+                  <div key={donation.id} className="flex items-center justify-between gap-3 pl-11">
+                    <div className="min-w-0">
+                      <p className="text-[11px] font-bold text-slate-700 truncate">{donation.donorName || 'Doador anônimo'}</p>
+                      <p className="text-[10px] text-slate-400 font-mono">
+                        {donation.date.split('-').reverse().join('/')}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-xs font-bold text-slate-800">{formatCurrency(donation.amount)}</span>
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                        donation.status === 'Pago' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                      }`}>
+                        {donation.status.toUpperCase()}
+                      </span>
+                      <button
+                        onClick={() => toggleStatus(donation)}
+                        className="text-emerald-600 hover:text-emerald-800 transition-colors"
+                        title={donation.status === 'Pago' ? 'Marcar como pendente' : 'Marcar como pago'}
+                      >
+                        <Check size={14} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(donation)}
+                        className="text-rose-400 hover:text-rose-600 transition-colors"
+                        title="Excluir doação"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
-            )}
-          </div>
+            </div>
+          )}
+
+          {grouped.length === 0 && anonymous.length === 0 && (
+            <div className="px-4 py-10 text-center text-xs text-slate-500">
+              Nenhuma doação registrada ainda. As doações são lançadas na página de detalhes do membro.
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -3,9 +3,9 @@ import { Member, Payment } from '../../types';
 import { useAppStore } from '../../store/useStore';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
-import { formatCurrency, getMonthName } from '../../lib/utils';
-import { paymentsApi } from '../../lib/api';
-import { ArrowLeft, Calendar, MessageSquare, CreditCard } from 'lucide-react';
+import { formatCurrency, getMonthName, generatePaymentMonth } from '../../lib/utils';
+import { paymentsApi, donationsApi } from '../../lib/api';
+import { ArrowLeft, Calendar, MessageSquare, CreditCard, HeartHandshake } from 'lucide-react';
 
 interface MemberDetailsProps {
   member: Member;
@@ -13,11 +13,22 @@ interface MemberDetailsProps {
 }
 
 export function MemberDetails({ member, onBack }: MemberDetailsProps) {
-  const { getMemberPayments } = useAppStore();
+  const { getMemberPayments, donations, addDonation, updateDonation } = useAppStore();
   const payments = getMemberPayments(member.id);
+  const memberDonations = donations.filter(d => d.memberId === member.id);
 
   const [mpLoading, setMpLoading] = useState<string | null>(null);
   const [mpError, setMpError] = useState<string | null>(null);
+
+  const [donationMonth, setDonationMonth] = useState(generatePaymentMonth(new Date()));
+  const [donationAmount, setDonationAmount] = useState('');
+  const [mpDonationLoading, setMpDonationLoading] = useState(false);
+  const [mpDonationError, setMpDonationError] = useState<string | null>(null);
+
+  const currentDonation = memberDonations.find(d => d.month === donationMonth);
+  const monthPayment = payments.find(p => p.month === donationMonth);
+  const monthlyFeeForMonth = monthPayment?.amount ?? member.monthlyFee;
+  const monthTotal = monthlyFeeForMonth + (currentDonation?.amount || 0);
 
   const handleMercadoPago = async (payment: Payment) => {
     setMpLoading(payment.id!);
@@ -29,6 +40,44 @@ export function MemberDetails({ member, onBack }: MemberDetailsProps) {
       setMpError(e.message || 'Erro ao gerar link do Mercado Pago');
     } finally {
       setMpLoading(null);
+    }
+  };
+
+  const handleDonationMercadoPago = async () => {
+    const amount = parseFloat(donationAmount.replace(',', '.'));
+    if (!amount || amount <= 0) {
+      setMpDonationError('Informe um valor válido para a doação.');
+      return;
+    }
+    setMpDonationLoading(true);
+    setMpDonationError(null);
+    try {
+      let donation = currentDonation;
+      if (donation) {
+        if (donation.status !== 'Pago' && donation.amount !== amount) {
+          donation = await updateDonation(donation.id, { amount });
+        }
+      } else {
+        donation = await addDonation({
+          memberId: member.id,
+          donorName: member.name,
+          description: 'Doação',
+          amount,
+          date: new Date().toISOString().split('T')[0],
+          month: donationMonth,
+          status: 'Pendente',
+        });
+      }
+      if (donation && donation.status === 'Pendente') {
+        const { init_point } = await donationsApi.mercadopago(donation.id);
+        window.open(init_point, '_blank');
+      } else {
+        setMpDonationError('A doação deste mês já foi paga.');
+      }
+    } catch (e: any) {
+      setMpDonationError(e.message || 'Erro ao gerar link do Mercado Pago');
+    } finally {
+      setMpDonationLoading(false);
     }
   };
 
@@ -138,6 +187,91 @@ export function MemberDetails({ member, onBack }: MemberDetailsProps) {
             {payments.length === 0 && (
               <p className="text-center text-gray-500 py-8">Nenhuma mensalidade gerada.</p>
             )}
+          </div>
+        </div>
+
+        {/* Donations */}
+        <div className="md:col-span-3 bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+              <HeartHandshake size={18} className="text-emerald-600" />
+              Controle de Doações
+            </h3>
+            <span className="text-xs text-gray-500">Valor aberto · pagamento via Mercado Pago</span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Mês de referência</label>
+              <input
+                type="month"
+                value={donationMonth}
+                onChange={(e) => setDonationMonth(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Valor da doação *</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={donationAmount}
+                onChange={(e) => setDonationAmount(e.target.value)}
+                placeholder="0,00"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+            </div>
+            <div className="flex flex-col justify-end">
+              <button
+                onClick={handleDonationMercadoPago}
+                disabled={mpDonationLoading}
+                className="w-full py-2 px-3 bg-[#00A8E8] hover:bg-[#0090C8] text-white text-sm font-semibold rounded-lg shadow transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
+              >
+                <CreditCard size={15} />
+                {mpDonationLoading ? 'Gerando...' : 'Gerar Link Mercado Pago'}
+              </button>
+            </div>
+          </div>
+
+          {mpDonationError && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700 mb-4">
+              {mpDonationError}
+            </div>
+          )}
+
+          <div className="space-y-3">
+            {currentDonation ? (
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors">
+                <div>
+                  <p className="font-medium text-gray-900 capitalize">{getMonthName(currentDonation.month)} — Doação</p>
+                  <div className="flex items-center space-x-2 mt-1">
+                    <Badge variant={currentDonation.status === 'Pago' ? 'success' : 'warning'}>
+                      {currentDonation.status}
+                    </Badge>
+                    {currentDonation.status === 'Pago' && (
+                      <span className="text-xs text-gray-500">
+                        paga em {currentDonation.date.split('-').reverse().join('/')}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <span className="font-semibold text-gray-900">{formatCurrency(currentDonation.amount)}</span>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500">Nenhuma doação registrada para este mês.</p>
+            )}
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mt-4 pt-4 border-t border-gray-100 gap-2">
+            <span className="text-sm text-gray-600">Total de {getMonthName(donationMonth)}</span>
+            <div className="text-right">
+              <p className="text-xs text-gray-500">
+                Mensalidade: {formatCurrency(monthlyFeeForMonth)}
+                {currentDonation ? ` + Doação: ${formatCurrency(currentDonation.amount)}` : ''}
+              </p>
+              <p className="text-xl font-bold text-gray-900">{formatCurrency(monthTotal)}</p>
+            </div>
           </div>
         </div>
       </div>

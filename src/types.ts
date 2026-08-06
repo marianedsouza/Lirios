@@ -66,6 +66,7 @@ export interface Donation {
   description: string;
   amount: number;
   date: string; // YYYY-MM-DD
+  month: string; // YYYY-MM
   status: DonationStatus;
 }
 

@@ -25,8 +25,8 @@ interface AppState {
   rejectReceipt: (receiptId: string) => Promise<void>;
   getMemberReceipts: (memberId: string) => PaymentReceipt[];
   refreshPayments: () => Promise<void>;
-  addDonation: (donation: Omit<Donation, 'id'>) => Promise<void>;
-  updateDonation: (id: string, donation: Partial<Donation>) => Promise<void>;
+  addDonation: (donation: Omit<Donation, 'id'>) => Promise<Donation>;
+  updateDonation: (id: string, donation: Partial<Donation>) => Promise<Donation>;
   deleteDonation: (id: string) => Promise<void>;
 }
 
@@ -258,11 +258,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const addDonation = useCallback(async (donationData: Omit<Donation, 'id'>) => {
     const created = await donationsApi.create(donationData) as Donation;
     setDonations((prev) => [...prev, created]);
+    return created;
   }, []);
 
   const updateDonation = useCallback(async (id: string, updates: Partial<Donation>) => {
     const updated = await donationsApi.update(id, updates) as Donation;
     setDonations((prev) => prev.map((d) => (d.id === id ? updated : d)));
+    return updated;
   }, []);
 
   const deleteDonation = useCallback(async (id: string) => {
