@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { CheckCircle, Loader2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { CheckCircle, Loader2, LogIn } from 'lucide-react';
 import logo from '../../assets/logo.png';
 
 type Step = 'form' | 'loading' | 'success' | 'error';
@@ -7,6 +7,15 @@ type Step = 'form' | 'loading' | 'success' | 'error';
 export function MemberSignup() {
   const [step, setStep] = useState<Step>('form');
   const [errorMsg, setErrorMsg] = useState('');
+
+  useEffect(() => {
+    if (step === 'success') {
+      const timer = setTimeout(() => {
+        window.location.href = '/';
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [step]);
 
   const [form, setForm] = useState({
     name: '',
@@ -65,6 +74,13 @@ export function MemberSignup() {
               <p className="text-sm font-mono font-bold text-emerald-700">{form.username}</p>
               <p className="text-[10px] text-slate-400 mt-2">Use a senha que você cadastrou para entrar após a aprovação.</p>
             </div>
+            <button
+              onClick={() => { window.location.href = '/'; }}
+              className="px-5 py-2.5 bg-emerald-600 text-white text-xs font-bold uppercase rounded hover:bg-emerald-700 transition-colors flex items-center gap-2 mx-auto"
+            >
+              <LogIn size={14} /> Ir para o Login
+            </button>
+            <p className="text-[11px] text-slate-400">Redirecionando automaticamente...</p>
           </div>
         ) : step === 'error' ? (
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 text-center space-y-4">
