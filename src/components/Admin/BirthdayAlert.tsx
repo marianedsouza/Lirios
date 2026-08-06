@@ -73,7 +73,7 @@ export function BirthdayAlert() {
         <div className="flex items-center gap-2">
           <Gift className="text-pink-500" size={20} />
           <h3 className="text-sm font-bold text-pink-700">Aniversariantes do Mês</h3>
-          <span className="bg-pink-200 text-pink-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
+          <span className="bg-pink-200 text-pink-800 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap">
             {birthdayThisMonth.length} {birthdayThisMonth.length === 1 ? 'aniversariante' : 'aniversariantes'}
           </span>
         </div>
