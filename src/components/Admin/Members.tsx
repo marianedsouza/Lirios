@@ -6,7 +6,7 @@ import { MemberDetails } from './MemberDetails';
 import { BookOpen, Copy, Check, UserPlus, Trash2 } from 'lucide-react';
 import { GuidelinesAccordion } from '../GuidelinesAccordion';
 
-type FilterType = 'Todos' | 'Ativos' | 'Inativos' | 'Pendentes' | 'Com Atraso';
+type FilterType = 'Todos' | 'Ativos' | 'Inativos' | 'Pendentes' | 'Dirigentes' | 'Com Atraso';
 
 export function Members() {
   const { members, payments, settings, updateMember, deleteMember } = useAppStore();
@@ -26,15 +26,18 @@ export function Members() {
     setTimeout(() => setCopied(false), 2500);
   };
 
-  const filteredMembers = members.filter(member => {
-    const matchesSearch = member.name.toLowerCase().includes(searchTerm.toLowerCase());
-    if (!matchesSearch) return false;
-    if (filter === 'Ativos') return member.status === 'Ativo';
-    if (filter === 'Inativos') return member.status === 'Inativo';
-    if (filter === 'Pendentes') return (member.status as string) === 'Pendente';
-    if (filter === 'Com Atraso') return payments.some(p => p.memberId === member.id && p.status === 'Atrasado');
-    return true;
-  });
+  const filteredMembers = members
+    .filter(member => {
+      const matchesSearch = member.name.toLowerCase().includes(searchTerm.toLowerCase());
+      if (!matchesSearch) return false;
+      if (filter === 'Ativos') return member.status === 'Ativo';
+      if (filter === 'Inativos') return member.status === 'Inativo';
+      if (filter === 'Pendentes') return (member.status as string) === 'Pendente';
+      if (filter === 'Dirigentes') return member.status === 'Dirigente';
+      if (filter === 'Com Atraso') return payments.some(p => p.memberId === member.id && p.status === 'Atrasado');
+      return true;
+    })
+    .sort((a, b) => (a.status === 'Dirigente' ? 0 : 1) - (b.status === 'Dirigente' ? 0 : 1));
 
   const handleOpenForm = (member?: Member) => {
     setEditingMember(member);
@@ -122,6 +125,7 @@ export function Members() {
               <option value="Ativos">Ativos</option>
               <option value="Inativos">Inativos</option>
               <option value="Pendentes">Pendentes</option>
+              <option value="Dirigentes">Dirigentes</option>
               <option value="Com Atraso">Com Atraso</option>
             </select>
           </div>
