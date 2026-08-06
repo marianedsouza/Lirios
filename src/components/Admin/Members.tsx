@@ -109,26 +109,26 @@ export function Members() {
         <div className="flex items-center gap-2">
           <button
             onClick={handleCopyInvite}
-            className="flex items-center gap-2 px-4 py-2.5 bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold rounded hover:bg-blue-100 transition-colors"
+            className="flex items-center gap-1 px-2.5 py-1.5 bg-blue-50 border border-blue-200 text-blue-700 text-[10px] font-bold rounded hover:bg-blue-100 transition-colors whitespace-nowrap"
           >
-            {copied ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
+            {copied ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
             {copied ? 'Link copiado!' : 'Copiar link'}
           </button>
           <button
             onClick={handleShareInvite}
-            className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 text-white text-xs font-bold rounded shadow hover:bg-emerald-700 transition-colors"
+            className="flex items-center gap-1 px-2.5 py-1.5 bg-emerald-600 text-white text-[10px] font-bold rounded shadow hover:bg-emerald-700 transition-colors whitespace-nowrap"
           >
-            <Share2 size={14} />
+            <Share2 size={12} />
             Compartilhar
           </button>
+          <button
+            onClick={() => handleOpenForm()}
+            className="flex items-center gap-1 px-2.5 py-1.5 bg-emerald-600 text-white text-[10px] font-bold rounded shadow hover:bg-emerald-700 transition-colors whitespace-nowrap ml-auto"
+          >
+            <UserPlus size={12} />
+            Novo Membro
+          </button>
         </div>
-        <button
-          onClick={() => handleOpenForm()}
-          className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 text-white text-xs font-bold rounded shadow hover:bg-emerald-700 transition-colors"
-        >
-          <UserPlus size={14} />
-          NOVO MEMBRO
-        </button>
       </div>
 
       {/* Aviso de membros pendentes */}

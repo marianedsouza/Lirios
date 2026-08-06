@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { Member, Payment, PaymentMethod } from '../../types';
+import { Member, Payment } from '../../types';
 import { useAppStore } from '../../store/useStore';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { formatCurrency, getMonthName } from '../../lib/utils';
 import { paymentsApi } from '../../lib/api';
-import { ArrowLeft, Check, Calendar, Phone, MessageSquare, CreditCard } from 'lucide-react';
+import { ArrowLeft, Calendar, MessageSquare, CreditCard } from 'lucide-react';
 
 interface MemberDetailsProps {
   member: Member;
@@ -13,12 +13,9 @@ interface MemberDetailsProps {
 }
 
 export function MemberDetails({ member, onBack }: MemberDetailsProps) {
-  const { getMemberPayments, registerPayment } = useAppStore();
+  const { getMemberPayments } = useAppStore();
   const payments = getMemberPayments(member.id);
-  
-  const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('PIX');
-  const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
+
   const [mpLoading, setMpLoading] = useState<string | null>(null);
   const [mpError, setMpError] = useState<string | null>(null);
 
@@ -32,14 +29,6 @@ export function MemberDetails({ member, onBack }: MemberDetailsProps) {
       setMpError(e.message || 'Erro ao gerar link do Mercado Pago');
     } finally {
       setMpLoading(null);
-    }
-  };
-
-  const handleRegisterPayment = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (selectedPayment) {
-      await registerPayment(selectedPayment.id, paymentMethod, paymentDate);
-      setSelectedPayment(null);
     }
   };
 
@@ -72,12 +61,16 @@ export function MemberDetails({ member, onBack }: MemberDetailsProps) {
           
           <div className="space-y-3 text-sm">
             <div className="flex items-center text-gray-600">
-              <Phone size={16} className="mr-3 text-gray-400" />
-              {member.phone || 'Sem telefone'}
-            </div>
-            <div className="flex items-center text-gray-600">
               <MessageSquare size={16} className="mr-3 text-gray-400" />
               {member.whatsapp}
+            </div>
+            <div className="flex items-center text-gray-600">
+              <Calendar size={16} className="mr-3 text-gray-400" />
+              {member.birthDate ? `Nascimento: ${member.birthDate}` : 'Nascimento: Não informado'}
+            </div>
+            <div className="flex items-center text-gray-600">
+              <Calendar size={16} className="mr-3 text-gray-400" />
+              Entrada: {member.entryDate ? member.entryDate.split('-').reverse().join('/') : '—'}
             </div>
             <div className="flex items-center text-gray-600">
               <Calendar size={16} className="mr-3 text-gray-400" />
@@ -99,45 +92,6 @@ export function MemberDetails({ member, onBack }: MemberDetailsProps) {
         {/* Payments History */}
         <div className="md:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Controle de Mensalidades</h3>
-          
-          {selectedPayment ? (
-            <div className="bg-emerald-50 rounded-lg p-5 border border-emerald-100 mb-6">
-              <h4 className="font-semibold text-emerald-900 mb-4 flex items-center">
-                <Check className="mr-2" size={18} />
-                Registrar Pagamento: {getMonthName(selectedPayment.month)}
-              </h4>
-              <form onSubmit={handleRegisterPayment} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-emerald-900 mb-1">Data do Pagamento</label>
-                    <input 
-                      type="date" 
-                      required
-                      value={paymentDate}
-                      onChange={(e) => setPaymentDate(e.target.value)}
-                      className="w-full px-3 py-2 bg-white border border-emerald-200 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-emerald-900 mb-1">Forma de Pagamento</label>
-                    <select 
-                      value={paymentMethod}
-                      onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
-                      className="w-full px-3 py-2 bg-white border border-emerald-200 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    >
-                      <option value="PIX">PIX</option>
-                      <option value="Dinheiro">Dinheiro</option>
-                      <option value="Transferência">Transferência</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="flex space-x-3 pt-2">
-                  <Button type="button" variant="outline" onClick={() => setSelectedPayment(null)}>Cancelar</Button>
-                  <Button type="submit">Confirmar Pagamento</Button>
-                </div>
-              </form>
-            </div>
-          ) : null}
 
           <div className="space-y-3">
             {mpError && (
@@ -164,24 +118,19 @@ export function MemberDetails({ member, onBack }: MemberDetailsProps) {
                   </div>
                 </div>
                 
-                <div className="flex items-center justify-between sm:justify-end sm:space-x-4 w-full sm:w-auto">
+                <div className="flex flex-wrap items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
                   <span className="font-semibold text-gray-900">{formatCurrency(payment.amount)}</span>
                   {payment.status !== 'Pago' && (
-                    <div className="flex items-center space-x-2">
-                      <Button size="sm" onClick={() => setSelectedPayment(payment)}>
-                        Registrar
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleMercadoPago(payment)}
-                        disabled={mpLoading === payment.id}
-                        title="Gerar link de pagamento via Mercado Pago"
-                      >
-                        <CreditCard size={14} className="mr-1" />
-                        {mpLoading === payment.id ? 'Gerando...' : 'Mercado Pago'}
-                      </Button>
-                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleMercadoPago(payment)}
+                      disabled={mpLoading === payment.id}
+                      title="Gerar link de pagamento via Mercado Pago"
+                    >
+                      <CreditCard size={13} className="mr-1" />
+                      {mpLoading === payment.id ? 'Gerando...' : 'Mercado Pago'}
+                    </Button>
                   )}
                 </div>
               </div>
