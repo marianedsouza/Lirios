@@ -1,9 +1,32 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAppStore } from '../../store/useStore';
-import { Gift, MessageCircle } from 'lucide-react';
+import { Gift, MessageCircle, X } from 'lucide-react';
+
+const DISMISS_KEY = 'birthday_alert_dismissed';
+
+function currentMonthKey(): string {
+  const today = new Date();
+  return `${today.getFullYear()}-${today.getMonth()}`;
+}
 
 export function BirthdayAlert() {
   const { members } = useAppStore();
+  const [dismissed, setDismissed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(DISMISS_KEY) === currentMonthKey();
+    } catch {
+      return false;
+    }
+  });
+
+  const closeAlert = () => {
+    try {
+      localStorage.setItem(DISMISS_KEY, currentMonthKey());
+    } catch {
+      // storage indisponível — apenas fecha nesta sessão
+    }
+    setDismissed(true);
+  };
   
   const today = new Date();
   const currentMonth = today.getMonth();
@@ -36,7 +59,7 @@ export function BirthdayAlert() {
     .filter(m => m.birthdayDay < currentDay)
     .sort((a, b) => b.birthdayDay - a.birthdayDay);
 
-  if (birthdayThisMonth.length === 0) return null;
+  if (dismissed || birthdayThisMonth.length === 0) return null;
 
   const formatWhatsAppLink = (phone: string, name: string) => {
     const cleanPhone = phone.replace(/\D/g, '');
@@ -46,12 +69,21 @@ export function BirthdayAlert() {
 
   return (
     <div className="bg-gradient-to-r from-pink-50 to-purple-50 border border-pink-200 rounded-lg p-4 mb-4">
-      <div className="flex items-center gap-2 mb-3">
-        <Gift className="text-pink-500" size={20} />
-        <h3 className="text-sm font-bold text-pink-700">Aniversariantes do Mês</h3>
-        <span className="bg-pink-200 text-pink-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
-          {birthdayThisMonth.length} {birthdayThisMonth.length === 1 ? 'aniversariante' : 'aniversariantes'}
-        </span>
+      <div className="flex items-start justify-between gap-2 mb-3">
+        <div className="flex items-center gap-2">
+          <Gift className="text-pink-500" size={20} />
+          <h3 className="text-sm font-bold text-pink-700">Aniversariantes do Mês</h3>
+          <span className="bg-pink-200 text-pink-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
+            {birthdayThisMonth.length} {birthdayThisMonth.length === 1 ? 'aniversariante' : 'aniversariantes'}
+          </span>
+        </div>
+        <button
+          onClick={closeAlert}
+          className="text-pink-400 hover:text-pink-600 transition-colors shrink-0"
+          title="Fechar alerta de aniversariantes deste mês"
+        >
+          <X size={18} />
+        </button>
       </div>
       
       {todayBirthdays.length > 0 && (
