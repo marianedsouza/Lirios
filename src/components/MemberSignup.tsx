@@ -6,6 +6,13 @@ import fundoCel from '../../assets/fundo-Cel.png';
 
 type Step = 'form' | 'loading' | 'success' | 'error';
 
+function maskPhone(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, 11);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+}
+
 export function MemberSignup() {
   const [step, setStep] = useState<Step>('form');
   const [errorMsg, setErrorMsg] = useState('');
@@ -23,13 +30,13 @@ export function MemberSignup() {
     name: '',
     username: '',
     password: '',
-    phone: '',
     whatsapp: '',
     birthDate: '',
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    const value = e.target.name === 'whatsapp' ? maskPhone(e.target.value) : e.target.value;
+    setForm(prev => ({ ...prev, [e.target.name]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -79,7 +86,7 @@ export function MemberSignup() {
             <img src={logo} alt="Logo Lírios do Pântano" className="h-full w-full object-cover" />
           </div>
           <h1 className="text-2xl font-bold text-slate-800">Lírios do Pântano</h1>
-          <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest mt-1">Formulário de Inscrição</p>
+          <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest mt-1">Formulário de Cadastro</p>
         </div>
 
         {step === 'success' ? (
@@ -87,7 +94,7 @@ export function MemberSignup() {
             <CheckCircle size={48} className="text-emerald-500 mx-auto" />
             <h2 className="text-lg font-bold text-slate-800">Cadastro enviado com sucesso!</h2>
             <p className="text-sm text-slate-600">
-              Seu pedido de inscrição foi recebido. Aguarde a aprovação da diretoria para conseguir acessar o portal.
+              Seu pedido de cadastro foi recebido. Aguarde a aprovação da diretoria para conseguir acessar o portal.
             </p>
             <div className="bg-slate-50 rounded-lg p-4 border border-slate-200 text-left">
               <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Seu usuário de acesso</p>
@@ -115,7 +122,7 @@ export function MemberSignup() {
         ) : (
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <h2 className="text-xl font-bold text-gray-900 tracking-tight mb-1">Novo Membro</h2>
-            <p className="text-gray-500 text-sm mb-6">Preencha os dados abaixo para solicitar sua inscrição</p>
+            <p className="text-gray-500 text-sm mb-6">Preencha os dados abaixo para solicitar seu cadastro</p>
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -159,7 +166,7 @@ export function MemberSignup() {
                   />
                 </div>
 
-                <div>
+                <div className="col-span-1 md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">WhatsApp *</label>
                   <input
                     required
@@ -168,18 +175,6 @@ export function MemberSignup() {
                     value={form.whatsapp}
                     onChange={handleChange}
                     placeholder="(67) 99999-9999"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Telefone</label>
-                  <input
-                    type="tel"
-                    name="phone"
-                    value={form.phone}
-                    onChange={handleChange}
-                    placeholder="(67) 3333-3333"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
@@ -201,14 +196,15 @@ export function MemberSignup() {
 
               <div className="flex justify-end pt-4 border-t border-gray-100">
                 <button
+                  id="btn-cadastro"
                   type="submit"
                   disabled={step === 'loading'}
-                  className="px-6 py-2.5 bg-emerald-600 text-white text-sm font-bold rounded-md hover:bg-emerald-700 disabled:opacity-50 transition-colors flex items-center gap-2"
+                  className="w-full py-2.5 bg-emerald-600 text-white text-sm font-bold rounded-md hover:bg-emerald-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
                 >
                   {step === 'loading' ? (
                     <><Loader2 size={16} className="animate-spin" /> Enviando...</>
                   ) : (
-                    'Enviar Inscrição'
+                    'Enviar Cadastro'
                   )}
                 </button>
               </div>
