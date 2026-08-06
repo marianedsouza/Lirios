@@ -3,8 +3,7 @@ import { useAppStore } from '../../store/useStore';
 import { Member } from '../../types';
 import { MemberForm } from './MemberForm';
 import { MemberDetails } from './MemberDetails';
-import { BookOpen, Copy, Check, Share2, UserPlus, Trash2, RefreshCw } from 'lucide-react';
-import { GuidelinesAccordion } from '../GuidelinesAccordion';
+import { Copy, Check, Share2, UserPlus, Trash2, RefreshCw } from 'lucide-react';
 
 type FilterType = 'Todos' | 'Ativos' | 'Inativos' | 'Pendentes' | 'Dirigentes' | 'Com Atraso';
 
@@ -14,7 +13,7 @@ const BIRTH_MONTHS = [
 ];
 
 export function Members() {
-  const { members, payments, settings, updateMember, deleteMember, refreshData } = useAppStore();
+  const { members, payments, updateMember, deleteMember, refreshData } = useAppStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState<FilterType>('Todos');
   const [birthMonth, setBirthMonth] = useState('');
@@ -150,13 +149,6 @@ export function Members() {
           <span className="px-2 py-0.5 bg-amber-500 text-white text-[10px] font-bold rounded-full">{pendingCount}</span>
           {pendingCount === 1 ? 'membro aguarda aprovação.' : 'membros aguardam aprovação.'}
           <button onClick={() => setFilter('Pendentes')} className="underline text-amber-700 hover:text-amber-900">Ver pendentes</button>
-        </div>
-      )}
-
-      {/* Diretrizes da Casa — acordeão fechado */}
-      {settings.houseGuidelines && (
-        <div className="shrink-0">
-          <GuidelinesAccordion text={settings.houseGuidelines} />
         </div>
       )}
 

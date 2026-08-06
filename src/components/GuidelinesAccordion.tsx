@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BookOpen, ChevronDown, ChevronUp } from 'lucide-react';
+import { BookOpen, ChevronDown } from 'lucide-react';
 
 interface GuidelinesAccordionProps {
   text: string;
@@ -31,24 +31,21 @@ export function GuidelinesAccordion({ text }: GuidelinesAccordionProps) {
   if (!text) return null;
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+    <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 overflow-hidden">
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
-        className="w-full px-4 py-3 flex items-center justify-between gap-2 hover:bg-slate-50 transition-colors"
+        className="w-full px-6 py-4 border-b border-slate-100 bg-[#F6F9F6] flex items-center justify-between gap-2 text-left hover:bg-[#F0F6F1] transition-colors"
       >
         <div className="flex items-center gap-2">
-          <BookOpen size={14} className="text-emerald-600 shrink-0" />
-          <span className="text-sm font-bold text-slate-600">Diretrizes da Casa</span>
+          <BookOpen size={16} className="text-[#2E7A4A] shrink-0" />
+          <span className="text-sm font-bold text-[#1A4531] uppercase tracking-wider">Diretrizes da Casa</span>
         </div>
-        {open
-          ? <ChevronUp size={16} className="text-slate-400" />
-          : <ChevronDown size={16} className="text-slate-400" />
-        }
+        <ChevronDown size={18} className={`text-slate-400 transition-transform shrink-0 ${open ? 'rotate-180' : ''}`} />
       </button>
 
       {open && (
-        <div className="px-5 pb-5 pt-1 border-t border-slate-100">
+        <div className="px-5 sm:px-6 pb-5 pt-3 border-t border-slate-50 bg-slate-50/30">
           <div
             className="prose-sm max-w-none"
             dangerouslySetInnerHTML={{ __html: parseMarkdown(text) }}
