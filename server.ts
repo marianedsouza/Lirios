@@ -81,6 +81,9 @@ async function initDatabase() {
   await prisma!.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "expenses" ("id" TEXT NOT NULL PRIMARY KEY, "description" TEXT NOT NULL, "amount" REAL NOT NULL, "date" TEXT NOT NULL, "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, "updated_at" TIMESTAMP NOT NULL)`);
   await prisma!.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "app_settings" ("id" TEXT NOT NULL PRIMARY KEY, "pix_key" TEXT NOT NULL DEFAULT '', "bank_name" TEXT NOT NULL DEFAULT '', "account_name" TEXT NOT NULL DEFAULT '', "default_monthly_fee" REAL NOT NULL DEFAULT 50, "default_due_date" INTEGER NOT NULL DEFAULT 10, "house_guidelines" TEXT NOT NULL DEFAULT '', "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, "updated_at" TIMESTAMP NOT NULL)`);
   await prisma!.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "donations" ("id" TEXT NOT NULL PRIMARY KEY, "member_id" TEXT, "donor_name" TEXT NOT NULL DEFAULT '', "description" TEXT NOT NULL DEFAULT '', "amount" REAL NOT NULL, "date" TEXT NOT NULL, "month" TEXT NOT NULL DEFAULT '', "status" TEXT NOT NULL DEFAULT 'Pendente', "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, "updated_at" TIMESTAMP NOT NULL, CONSTRAINT "donations_member_id_fkey" FOREIGN KEY ("member_id") REFERENCES "members" ("id") ON DELETE SET NULL ON UPDATE CASCADE)`);
+  await prisma!.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "avisos" ("id" TEXT NOT NULL PRIMARY KEY, "title" TEXT NOT NULL, "content" TEXT NOT NULL DEFAULT '', "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, "updated_at" TIMESTAMP NOT NULL)`);
+  await prisma!.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "aviso_reads" ("id" TEXT NOT NULL PRIMARY KEY, "aviso_id" TEXT NOT NULL, "member_id" TEXT NOT NULL, "read_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, CONSTRAINT "aviso_reads_aviso_id_fkey" FOREIGN KEY ("aviso_id") REFERENCES "avisos" ("id") ON DELETE CASCADE ON UPDATE CASCADE, CONSTRAINT "aviso_reads_member_id_fkey" FOREIGN KEY ("member_id") REFERENCES "members" ("id") ON DELETE CASCADE ON UPDATE CASCADE)`);
+  await prisma!.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "aviso_reads_aviso_id_member_id_key" ON "aviso_reads"("aviso_id", "member_id")`);
   try {
     await prisma!.$executeRawUnsafe(`ALTER TABLE "donations" ADD COLUMN IF NOT EXISTS "month" TEXT NOT NULL DEFAULT ''`);
   } catch (e: any) {
@@ -624,6 +627,76 @@ app.post("/api/donations/:id/mercadopago", async (req, res) => {
   } catch (e: any) {
     console.error("Erro MP doação:", e);
     res.status(500).json({ error: e.message || "Erro ao gerar link do Mercado Pago" });
+  }
+});
+
+// ─── Avisos ────────────────────────────────────────────────
+app.get("/api/avisos", async (req, res) => {
+  try {
+    const memberId = typeof req.query.memberId === "string" ? req.query.memberId : undefined;
+    if (memberId) {
+      const avisos = await prisma!.aviso.findMany({
+        orderBy: { createdAt: "desc" },
+        include: { reads: { where: { memberId } } },
+      });
+      res.json(avisos.map(a => ({ ...a, isRead: a.reads.length > 0, reads: undefined })));
+    } else {
+      const avisos = await prisma!.aviso.findMany({ orderBy: { createdAt: "desc" } });
+      res.json(avisos);
+    }
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post("/api/avisos", async (req, res) => {
+  try {
+    const title = (req.body.title || "").trim();
+    if (!title) return res.status(400).json({ error: "Título obrigatório" });
+    const aviso = await prisma!.aviso.create({
+      data: { title, content: req.body.content || "" },
+    });
+    res.json(aviso);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.put("/api/avisos/:id", async (req, res) => {
+  try {
+    const title = (req.body.title || "").trim();
+    if (!title) return res.status(400).json({ error: "Título obrigatório" });
+    const aviso = await prisma!.aviso.update({
+      where: { id: req.params.id },
+      data: { title, content: req.body.content || "" },
+    });
+    res.json(aviso);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.delete("/api/avisos/:id", async (req, res) => {
+  try {
+    await prisma!.aviso.delete({ where: { id: req.params.id } });
+    res.json({ ok: true });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.put("/api/avisos/:id/read", async (req, res) => {
+  try {
+    const memberId = (req.body.memberId || "").trim();
+    if (!memberId) return res.status(400).json({ error: "memberId ausente" });
+    await prisma!.avisoRead.upsert({
+      where: { avisoId_memberId: { avisoId: req.params.id, memberId } },
+      create: { avisoId: req.params.id, memberId },
+      update: {},
+    });
+    res.json({ ok: true });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
   }
 });
 

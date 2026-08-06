@@ -4,6 +4,7 @@ import { Payment } from '../types';
 import { formatCurrency, getMonthName, generatePaymentMonth } from '../lib/utils';
 import { LogOut, Calendar, MessageSquare, CheckCircle, Clock, AlertTriangle, BookOpen, CreditCard, HeartHandshake, ChevronDown } from 'lucide-react';
 import { GuidelinesAccordion } from './GuidelinesAccordion';
+import { AvisosAccordion } from './AvisosAccordion';
 import { BirthdayAlert } from './Admin/BirthdayAlert';
 
 interface MemberPortalProps {
@@ -201,6 +202,9 @@ export function MemberPortal({ memberId, onLogout }: MemberPortalProps) {
             </div>
           </div>
         )}
+
+        {/* Avisos da casa */}
+        <AvisosAccordion memberId={memberId} />
 
         {/* Diretrizes da casa — acordeão fechado */}
         {settings.houseGuidelines && (

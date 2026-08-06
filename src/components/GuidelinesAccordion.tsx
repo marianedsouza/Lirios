@@ -6,7 +6,7 @@ interface GuidelinesAccordionProps {
 }
 
 /** Converte markdown simples (# título, **bold**, *itálico*, \n) para HTML seguro */
-function parseMarkdown(text: string): string {
+export function parseMarkdown(text: string): string {
   return text
     .split('\n')
     .map(line => {

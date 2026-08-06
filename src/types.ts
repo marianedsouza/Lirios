@@ -70,3 +70,12 @@ export interface Donation {
   status: DonationStatus;
 }
 
+export interface Aviso {
+  id: string;
+  title: string;
+  content: string;
+  createdAt?: string;
+  updatedAt?: string;
+  isRead?: boolean;
+}
+

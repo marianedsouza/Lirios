@@ -148,3 +148,21 @@ export const donationsApi = {
   remove: (id: string) => request<{ ok: boolean }>(`/donations/${id}`, { method: 'DELETE' }),
   mercadopago: (id: string) => request<{ init_point: string }>(`/donations/${id}/mercadopago`, { method: 'POST' }),
 };
+
+// ─── Avisos ────────────────────────────────────────────────
+export interface AvisoData {
+  id?: string;
+  title: string;
+  content: string;
+  createdAt?: string;
+  updatedAt?: string;
+  isRead?: boolean;
+}
+
+export const avisosApi = {
+  list: (memberId?: string) => request<AvisoData[]>(memberId ? `/avisos?memberId=${encodeURIComponent(memberId)}` : '/avisos'),
+  create: (data: Omit<AvisoData, 'id'>) => request<AvisoData>('/avisos', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id: string, data: Partial<AvisoData>) => request<AvisoData>(`/avisos/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  remove: (id: string) => request<{ ok: boolean }>(`/avisos/${id}`, { method: 'DELETE' }),
+  markRead: (id: string, memberId: string) => request<{ ok: boolean }>(`/avisos/${id}/read`, { method: 'PUT', body: JSON.stringify({ memberId }) }),
+};

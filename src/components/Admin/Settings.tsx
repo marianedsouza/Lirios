@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Save, DollarSign, BookOpen, Bold, Italic, Heading } from 'lucide-react';
+import { Save, DollarSign, BookOpen, Bold, Italic, Heading, Megaphone, Trash2, Pencil } from 'lucide-react';
 import { useAppStore } from '../../store/useStore';
 import { GuidelinesAccordion } from '../GuidelinesAccordion';
+import { Aviso } from '../../types';
 
 export function Settings() {
-  const { settings, updateSettings } = useAppStore();
+  const { settings, updateSettings, avisos, addAviso, updateAviso, deleteAviso } = useAppStore();
 
   const [defaultMonthlyFee, setDefaultMonthlyFee] = useState(settings.defaultMonthlyFee.toString());
   const [defaultDueDate, setDefaultDueDate] = useState(settings.defaultDueDate.toString());
@@ -12,6 +13,11 @@ export function Settings() {
   const [saved, setSaved] = useState(false);
   const [preview, setPreview] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const [avisoTitle, setAvisoTitle] = useState('');
+  const [avisoContent, setAvisoContent] = useState('');
+  const [editingAvisoId, setEditingAvisoId] = useState<string | null>(null);
+  const [avisoSaving, setAvisoSaving] = useState(false);
 
   useEffect(() => {
     setDefaultMonthlyFee(settings.defaultMonthlyFee.toString());
@@ -56,6 +62,40 @@ export function Settings() {
     const newValue = houseGuidelines.slice(0, lineStart) + '# ' + houseGuidelines.slice(lineStart);
     setHouseGuidelines(newValue);
     setTimeout(() => { ta.focus(); ta.setSelectionRange(lineStart + 2, lineStart + 2); }, 0);
+  };
+
+  const startEditAviso = (aviso: Aviso) => {
+    setEditingAvisoId(aviso.id);
+    setAvisoTitle(aviso.title);
+    setAvisoContent(aviso.content);
+  };
+
+  const cancelEditAviso = () => {
+    setEditingAvisoId(null);
+    setAvisoTitle('');
+    setAvisoContent('');
+  };
+
+  const handleSaveAviso = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!avisoTitle.trim()) return;
+    setAvisoSaving(true);
+    try {
+      if (editingAvisoId) {
+        await updateAviso(editingAvisoId, { title: avisoTitle.trim(), content: avisoContent });
+      } else {
+        await addAviso({ title: avisoTitle.trim(), content: avisoContent });
+      }
+      cancelEditAviso();
+    } finally {
+      setAvisoSaving(false);
+    }
+  };
+
+  const handleDeleteAviso = async (aviso: Aviso) => {
+    if (!window.confirm(`Excluir o aviso "${aviso.title}"?`)) return;
+    await deleteAviso(aviso.id);
+    if (editingAvisoId === aviso.id) cancelEditAviso();
   };
 
   return (
@@ -167,6 +207,86 @@ export function Settings() {
           </button>
         </div>
       </form>
+
+      {/* Avisos */}
+      <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+          <Megaphone className="text-emerald-600" size={20} />
+          <h3 className="text-sm font-bold text-slate-700">Avisos</h3>
+        </div>
+        <div className="p-6 max-w-2xl space-y-4">
+          <p className="text-[10px] text-slate-400">
+            Os avisos aparecem no portal do membro. Avisos novos (não lidos) ficam abertos para cada membro até serem lidos.
+          </p>
+
+          <div className="space-y-2">
+            {avisos.length === 0 && (
+              <p className="text-xs text-slate-400">Nenhum aviso criado ainda.</p>
+            )}
+            {avisos.map(aviso => (
+              <div key={aviso.id} className="border border-slate-100 rounded-lg p-3 flex items-center justify-between gap-3 bg-slate-50/50">
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-slate-800 truncate">{aviso.title}</p>
+                  <p className="text-[10px] text-slate-400 font-mono">
+                    {aviso.createdAt ? new Date(aviso.createdAt).toLocaleDateString('pt-BR') : ''}
+                  </p>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => startEditAviso(aviso)}
+                    className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 hover:text-emerald-800 uppercase transition-colors"
+                  >
+                    <Pencil size={12} /> Editar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteAviso(aviso)}
+                    className="inline-flex items-center gap-1 text-[10px] font-bold text-rose-500 hover:text-rose-700 uppercase transition-colors"
+                  >
+                    <Trash2 size={12} /> Excluir
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <form onSubmit={handleSaveAviso} className="space-y-3 border-t border-slate-100 pt-4">
+            <input
+              type="text"
+              value={avisoTitle}
+              onChange={e => setAvisoTitle(e.target.value)}
+              placeholder="Título do aviso"
+              className="w-full text-xs border border-slate-200 rounded px-3 py-2 bg-slate-50 focus:outline-emerald-500"
+            />
+            <textarea
+              value={avisoContent}
+              onChange={e => setAvisoContent(e.target.value)}
+              rows={4}
+              placeholder={"Conteúdo do aviso. Você pode usar # Título, **negrito** e *itálico*."}
+              className="w-full text-xs font-mono border border-slate-200 rounded px-3 py-2 bg-slate-50 focus:outline-emerald-500 resize-none leading-relaxed"
+            />
+            <div className="flex items-center gap-2">
+              <button
+                type="submit"
+                disabled={avisoSaving || !avisoTitle.trim()}
+                className="px-4 py-2 bg-emerald-600 text-white text-xs font-bold uppercase rounded hover:bg-emerald-700 transition-colors disabled:opacity-50"
+              >
+                {editingAvisoId ? 'Salvar Alterações' : 'Criar Aviso'}
+              </button>
+              {editingAvisoId && (
+                <button
+                  type="button"
+                  onClick={cancelEditAviso}
+                  className="px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-700 uppercase transition-colors"
+                >
+                  Cancelar
+                </button>
+              )}
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
   );
 }

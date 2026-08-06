@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import { Member, Payment, PaymentStatus, Expense, AppSettings, PaymentReceipt, Donation } from '../types';
+import { Member, Payment, PaymentStatus, Expense, AppSettings, PaymentReceipt, Donation, Aviso } from '../types';
 import { generatePaymentMonth } from '../lib/utils';
-import { membersApi, paymentsApi, expensesApi, settingsApi, receiptsApi, donationsApi } from '../lib/api';
+import { membersApi, paymentsApi, expensesApi, settingsApi, receiptsApi, donationsApi, avisosApi } from '../lib/api';
 
 interface AppState {
   members: Member[];
@@ -10,6 +10,7 @@ interface AppState {
   settings: AppSettings;
   receipts: PaymentReceipt[];
   donations: Donation[];
+  avisos: Aviso[];
   loading: boolean;
   addMember: (member: Omit<Member, 'id'>) => Promise<void>;
   updateMember: (id: string, member: Partial<Member>) => Promise<void>;
@@ -29,6 +30,9 @@ interface AppState {
   addDonation: (donation: Omit<Donation, 'id'>) => Promise<Donation>;
   updateDonation: (id: string, donation: Partial<Donation>) => Promise<Donation>;
   deleteDonation: (id: string) => Promise<void>;
+  addAviso: (aviso: Omit<Aviso, 'id'>) => Promise<Aviso>;
+  updateAviso: (id: string, aviso: Partial<Aviso>) => Promise<Aviso>;
+  deleteAviso: (id: string) => Promise<void>;
 }
 
 const AppContext = createContext<AppState | undefined>(undefined);
@@ -49,19 +53,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [receipts, setReceipts] = useState<PaymentReceipt[]>([]);
   const [donations, setDonations] = useState<Donation[]>([]);
+  const [avisos, setAvisos] = useState<Aviso[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Load all data from API on mount
   useEffect(() => {
     async function load() {
       try {
-        const [m, p, e, s, r, d] = await Promise.all([
+        const [m, p, e, s, r, d, a] = await Promise.all([
           membersApi.list(),
           paymentsApi.list(),
           expensesApi.list(),
           settingsApi.get(),
           receiptsApi.list(),
           donationsApi.list(),
+          avisosApi.list(),
         ]);
         setMembers(m as Member[]);
         setPayments(p as Payment[]);
@@ -69,6 +75,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setSettings(s as AppSettings);
         setReceipts(r as PaymentReceipt[]);
         setDonations(d as Donation[]);
+        setAvisos(a as Aviso[]);
       } catch (err) {
         console.error('Failed to load data from API:', err);
       } finally {
@@ -255,13 +262,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const refreshData = useCallback(async () => {
     try {
-      const [m, p, e, s, r, d] = await Promise.all([
+      const [m, p, e, s, r, d, a] = await Promise.all([
         membersApi.list(),
         paymentsApi.list(),
         expensesApi.list(),
         settingsApi.get(),
         receiptsApi.list(),
         donationsApi.list(),
+        avisosApi.list(),
       ]);
       setMembers(m as Member[]);
       setPayments(p as Payment[]);
@@ -269,6 +277,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setSettings(s as AppSettings);
       setReceipts(r as PaymentReceipt[]);
       setDonations(d as Donation[]);
+      setAvisos(a as Aviso[]);
     } catch (err) {
       console.error('Failed to refresh data:', err);
     }
@@ -295,15 +304,33 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setDonations((prev) => prev.filter((d) => d.id !== id));
   }, []);
 
+  const addAviso = useCallback(async (avisoData: Omit<Aviso, 'id'>) => {
+    const created = await avisosApi.create(avisoData) as Aviso;
+    setAvisos((prev) => [created, ...prev]);
+    return created;
+  }, []);
+
+  const updateAviso = useCallback(async (id: string, avisoData: Partial<Aviso>) => {
+    const updated = await avisosApi.update(id, avisoData) as Aviso;
+    setAvisos((prev) => prev.map((a) => (a.id === id ? updated : a)));
+    return updated;
+  }, []);
+
+  const deleteAviso = useCallback(async (id: string) => {
+    await avisosApi.remove(id);
+    setAvisos((prev) => prev.filter((a) => a.id !== id));
+  }, []);
+
   return (
     <AppContext.Provider value={{
-      members, payments, expenses, settings, receipts, donations, loading,
+      members, payments, expenses, settings, receipts, donations, avisos, loading,
       addMember, updateMember, deleteMember, registerPayment, generateMonthlyPayments,
       getMemberPayments, addExpense, deleteExpense, updateSettings,
       submitReceipt, approveReceipt, rejectReceipt, getMemberReceipts,
       refreshPayments,
       refreshData,
       addDonation, updateDonation, deleteDonation,
+      addAviso, updateAviso, deleteAviso,
     }}>
       {children}
     </AppContext.Provider>

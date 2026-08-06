@@ -35,6 +35,7 @@ model Member {
   payments     Payment[]
   receipts     PaymentReceipt[]
   donations    Donation[]
+  avisoReads   AvisoRead[]
 
   @@map("members")
 }
@@ -98,6 +99,29 @@ model Donation {
   member      Member?  @relation(fields: [memberId], references: [id], onDelete: SetNull)
 
   @@map("donations")
+}
+
+model Aviso {
+  id        String      @id @default(cuid())
+  title     String
+  content   String      @default("")
+  createdAt DateTime    @default(now()) @map("created_at")
+  updatedAt DateTime    @updatedAt @map("updated_at")
+  reads     AvisoRead[]
+
+  @@map("avisos")
+}
+
+model AvisoRead {
+  id       String   @id @default(cuid())
+  avisoId  String   @map("aviso_id")
+  memberId String   @map("member_id")
+  readAt   DateTime @default(now()) @map("read_at")
+  aviso    Aviso    @relation(fields: [avisoId], references: [id], onDelete: Cascade)
+  member   Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([avisoId, memberId])
+  @@map("aviso_reads")
 }
 
 model AppSettings {
