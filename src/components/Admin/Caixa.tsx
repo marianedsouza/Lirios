@@ -13,7 +13,7 @@ interface MPTransaction {
 }
 
 export function Caixa() {
-  const { payments, expenses, addExpense, deleteExpense } = useAppStore();
+  const { payments, expenses, donations, addExpense, deleteExpense } = useAppStore();
 
   const [isAdding, setIsAdding] = useState(false);
   const [newExpense, setNewExpense] = useState({ description: '', amount: '', date: new Date().toISOString().split('T')[0] });
@@ -45,7 +45,9 @@ export function Caixa() {
   }, []);
 
   // Totais do sistema interno
-  const totalReceitas = payments.filter(p => p.status === 'Pago').reduce((acc, curr) => acc + curr.amount, 0);
+  const totalMensalidades = payments.filter(p => p.status === 'Pago').reduce((acc, curr) => acc + curr.amount, 0);
+  const totalDoacoes = donations.filter(d => d.status === 'Pago').reduce((acc, d) => acc + d.amount, 0);
+  const totalReceitas = totalMensalidades + totalDoacoes;
   const totalDespesas = expenses.reduce((acc, curr) => acc + curr.amount, 0);
   const saldoAtual = totalReceitas - totalDespesas;
 
@@ -75,6 +77,7 @@ export function Caixa() {
         <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Entradas (Receitas)</p>
           <p className="text-xl font-bold text-emerald-600">{formatCurrency(totalReceitas)}</p>
+          <p className="text-[10px] text-slate-400 mt-1">Mensalidades: {formatCurrency(totalMensalidades)} · Doações: {formatCurrency(totalDoacoes)}</p>
         </div>
         <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Saídas (Despesas)</p>
