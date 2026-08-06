@@ -237,6 +237,7 @@ export function MemberDetails({ member, onBack }: MemberDetailsProps) {
                   <div>
                     <p className="font-medium text-gray-900 capitalize">Doação confirmada</p>
                     <div className="flex items-center space-x-2 mt-1">
+                      <Badge variant="outline" className="bg-[#1A4531] text-emerald-200 border-[#1A4531]">Doação</Badge>
                       <Badge variant="success">Pago</Badge>
                       <span className="text-xs text-gray-500">
                         em {donation.date.split('-').reverse().join('/')}

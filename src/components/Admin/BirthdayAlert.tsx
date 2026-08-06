@@ -4,9 +4,10 @@ import { Gift, MessageCircle, X } from 'lucide-react';
 
 export function BirthdayAlert() {
   const { members } = useAppStore();
-  const [dismissed, setDismissed] = useState<boolean>(false);
+  const [dismissed, setDismissed] = useState<boolean>(() => sessionStorage.getItem('birthday_dismissed') === '1');
 
   const closeAlert = () => {
+    sessionStorage.setItem('birthday_dismissed', '1');
     setDismissed(true);
   };
   

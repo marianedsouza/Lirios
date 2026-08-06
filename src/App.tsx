@@ -32,10 +32,12 @@ function AppContent() {
   }, [user]);
 
   const handleLogin = (role: 'admin' | 'member', memberId?: string) => {
+    sessionStorage.removeItem('birthday_dismissed');
     setUser({ role, memberId });
   };
 
   const handleLogout = () => {
+    sessionStorage.removeItem('birthday_dismissed');
     setUser({ role: null });
   };
 

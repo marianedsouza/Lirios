@@ -3,7 +3,7 @@ import { useAppStore } from '../../store/useStore';
 import { Member } from '../../types';
 import { MemberForm } from './MemberForm';
 import { MemberDetails } from './MemberDetails';
-import { BookOpen, Copy, Check, Share2, UserPlus, Trash2 } from 'lucide-react';
+import { BookOpen, Copy, Check, Share2, UserPlus, Trash2, RefreshCw } from 'lucide-react';
 import { GuidelinesAccordion } from '../GuidelinesAccordion';
 
 type FilterType = 'Todos' | 'Ativos' | 'Inativos' | 'Pendentes' | 'Dirigentes' | 'Com Atraso';
@@ -14,7 +14,7 @@ const BIRTH_MONTHS = [
 ];
 
 export function Members() {
-  const { members, payments, settings, updateMember, deleteMember } = useAppStore();
+  const { members, payments, settings, updateMember, deleteMember, refreshData } = useAppStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState<FilterType>('Todos');
   const [birthMonth, setBirthMonth] = useState('');
@@ -23,6 +23,13 @@ export function Members() {
   const [viewingMember, setViewingMember] = useState<Member | undefined>(undefined);
   const [copied, setCopied] = useState(false);
   const [memberToDelete, setMemberToDelete] = useState<Member | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await refreshData();
+    setRefreshing(false);
+  };
 
   const pendingCount = members.filter(m => (m.status as string) === 'Pendente').length;
 
@@ -156,7 +163,18 @@ export function Members() {
       {/* Lista de membros */}
       <div className="bg-white border border-slate-200 rounded-lg shadow-sm flex flex-col md:flex-1 md:min-h-0 overflow-hidden">
         <div className="px-4 py-3 border-b border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shrink-0">
-          <h3 className="text-sm font-bold text-slate-600">Lista de Membros</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-bold text-slate-600">Lista de Membros</h3>
+            <button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="flex items-center gap-1.5 text-[10px] font-bold text-[#2F6A4F] hover:text-[#1A4531] transition-colors disabled:opacity-50"
+              title="Atualizar dados"
+            >
+              <RefreshCw size={12} className={refreshing ? 'animate-spin' : ''} />
+              {refreshing ? 'Atualizando...' : 'Atualizar'}
+            </button>
+          </div>
           <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
             <input
               type="text"

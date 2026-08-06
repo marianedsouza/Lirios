@@ -25,6 +25,7 @@ interface AppState {
   rejectReceipt: (receiptId: string) => Promise<void>;
   getMemberReceipts: (memberId: string) => PaymentReceipt[];
   refreshPayments: () => Promise<void>;
+  refreshData: () => Promise<void>;
   addDonation: (donation: Omit<Donation, 'id'>) => Promise<Donation>;
   updateDonation: (id: string, donation: Partial<Donation>) => Promise<Donation>;
   deleteDonation: (id: string) => Promise<void>;
@@ -252,6 +253,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const refreshData = useCallback(async () => {
+    try {
+      const [m, p, e, s, r, d] = await Promise.all([
+        membersApi.list(),
+        paymentsApi.list(),
+        expensesApi.list(),
+        settingsApi.get(),
+        receiptsApi.list(),
+        donationsApi.list(),
+      ]);
+      setMembers(m as Member[]);
+      setPayments(p as Payment[]);
+      setExpenses(e as Expense[]);
+      setSettings(s as AppSettings);
+      setReceipts(r as PaymentReceipt[]);
+      setDonations(d as Donation[]);
+    } catch (err) {
+      console.error('Failed to refresh data:', err);
+    }
+  }, []);
+
   const getMemberReceipts = useCallback((memberId: string) => {
     return receipts.filter(r => r.memberId === memberId).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }, [receipts]);
@@ -280,6 +302,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       getMemberPayments, addExpense, deleteExpense, updateSettings,
       submitReceipt, approveReceipt, rejectReceipt, getMemberReceipts,
       refreshPayments,
+      refreshData,
       addDonation, updateDonation, deleteDonation,
     }}>
       {children}

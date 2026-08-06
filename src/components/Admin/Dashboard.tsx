@@ -1,10 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAppStore } from '../../store/useStore';
 import { generatePaymentMonth, formatCurrency, getMonthName } from '../../lib/utils';
 import { BirthdayAlert } from './BirthdayAlert';
+import { RefreshCw } from 'lucide-react';
 
 export function Dashboard() {
-  const { members, payments, donations } = useAppStore();
+  const { members, payments, donations, refreshData } = useAppStore();
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await refreshData();
+    setRefreshing(false);
+  };
   
   const currentMonth = generatePaymentMonth(new Date());
   const currentMonthPayments = payments.filter(p => p.month === currentMonth);
@@ -140,8 +148,17 @@ export function Dashboard() {
 
         {/* Monitor de Pagamentos — cards no mobile */}
         <div className="lg:hidden bg-white border border-slate-100 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.03)] overflow-hidden">
-          <div className="px-4 py-3 border-b border-slate-100 bg-[#F6F9F6]">
+          <div className="px-4 py-3 border-b border-slate-100 bg-[#F6F9F6] flex items-center justify-between gap-3">
             <h3 className="text-[12px] font-bold text-[#1A4531] uppercase tracking-wider">Monitor de Pagamentos Recentes</h3>
+            <button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="flex items-center gap-1.5 text-[10px] font-bold text-[#2F6A4F] hover:text-[#1A4531] transition-colors disabled:opacity-50 shrink-0"
+              title="Atualizar dados"
+            >
+              <RefreshCw size={12} className={refreshing ? 'animate-spin' : ''} />
+              {refreshing ? 'Atualizando...' : 'Atualizar'}
+            </button>
           </div>
           <div className="divide-y divide-slate-50">
             {monitorRows.map(row => (
@@ -172,6 +189,15 @@ export function Dashboard() {
         <div className="hidden lg:flex lg:w-2/3 bg-white border border-slate-100 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.03)] flex-col min-h-[300px] overflow-hidden">
           <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between shrink-0 bg-[#F6F9F6]">
             <h3 className="text-[12px] font-bold text-[#1A4531] uppercase tracking-wider">Monitor de Pagamentos Recentes</h3>
+            <button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="flex items-center gap-1.5 text-[10px] font-bold text-[#2F6A4F] hover:text-[#1A4531] transition-colors disabled:opacity-50 shrink-0"
+              title="Atualizar dados"
+            >
+              <RefreshCw size={12} className={refreshing ? 'animate-spin' : ''} />
+              {refreshing ? 'Atualizando...' : 'Atualizar'}
+            </button>
           </div>
           <div className="flex-1 overflow-y-auto overflow-x-auto">
             <table className="w-full text-left border-collapse min-w-[500px]">
