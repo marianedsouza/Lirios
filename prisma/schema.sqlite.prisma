@@ -1,10 +1,13 @@
+// Variação local do schema para rodar em SQLite (file:./dev.db) sem depender da Neon.
+// Os modelos são idênticos ao schema.prisma (PostgreSQL). Use para desenvolvimento local:
+//   npx prisma generate --schema=prisma/schema.sqlite.prisma
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
 }
 
 model Admin {
@@ -15,23 +18,23 @@ model Admin {
 }
 
 model Member {
-  id          String    @id @default(cuid())
-  name        String
-  username    String    @unique
-  password    String
-  phone       String    @default("")
-  whatsapp    String
-  birthDate   String    @default("") @map("birth_date")
-  entryDate   String    @default("") @map("entry_date")
-  monthlyFee  Float     @map("monthly_fee")
-  dueDate     Int       @map("due_date")
-  status      String    @default("Ativo")
-  observations String   @default("")
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
-  payments    Payment[]
-  receipts    PaymentReceipt[]
-  donations   Donation[]
+  id           String    @id @default(cuid())
+  name         String
+  username     String    @unique
+  password     String
+  phone        String    @default("")
+  whatsapp     String
+  birthDate    String    @default("") @map("birth_date")
+  entryDate    String    @default("") @map("entry_date")
+  monthlyFee   Float     @map("monthly_fee")
+  dueDate      Int       @map("due_date")
+  status       String    @default("Ativo")
+  observations String    @default("")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  payments     Payment[]
+  receipts     PaymentReceipt[]
+  donations    Donation[]
 
   @@map("members")
 }

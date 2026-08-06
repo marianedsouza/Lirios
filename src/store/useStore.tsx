@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import { Member, Payment, PaymentStatus, Expense, AppSettings, PaymentReceipt } from '../types';
+import { Member, Payment, PaymentStatus, Expense, AppSettings, PaymentReceipt, Donation } from '../types';
 import { generatePaymentMonth } from '../lib/utils';
-import { membersApi, paymentsApi, expensesApi, settingsApi, receiptsApi } from '../lib/api';
+import { membersApi, paymentsApi, expensesApi, settingsApi, receiptsApi, donationsApi } from '../lib/api';
 
 interface AppState {
   members: Member[];
@@ -9,6 +9,7 @@ interface AppState {
   expenses: Expense[];
   settings: AppSettings;
   receipts: PaymentReceipt[];
+  donations: Donation[];
   loading: boolean;
   addMember: (member: Omit<Member, 'id'>) => Promise<void>;
   updateMember: (id: string, member: Partial<Member>) => Promise<void>;
@@ -24,6 +25,9 @@ interface AppState {
   rejectReceipt: (receiptId: string) => Promise<void>;
   getMemberReceipts: (memberId: string) => PaymentReceipt[];
   refreshPayments: () => Promise<void>;
+  addDonation: (donation: Omit<Donation, 'id'>) => Promise<void>;
+  updateDonation: (id: string, donation: Partial<Donation>) => Promise<void>;
+  deleteDonation: (id: string) => Promise<void>;
 }
 
 const AppContext = createContext<AppState | undefined>(undefined);
@@ -43,24 +47,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [receipts, setReceipts] = useState<PaymentReceipt[]>([]);
+  const [donations, setDonations] = useState<Donation[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Load all data from API on mount
   useEffect(() => {
     async function load() {
       try {
-        const [m, p, e, s, r] = await Promise.all([
+        const [m, p, e, s, r, d] = await Promise.all([
           membersApi.list(),
           paymentsApi.list(),
           expensesApi.list(),
           settingsApi.get(),
           receiptsApi.list(),
+          donationsApi.list(),
         ]);
         setMembers(m as Member[]);
         setPayments(p as Payment[]);
         setExpenses(e as Expense[]);
         setSettings(s as AppSettings);
         setReceipts(r as PaymentReceipt[]);
+        setDonations(d as Donation[]);
       } catch (err) {
         console.error('Failed to load data from API:', err);
       } finally {
@@ -248,13 +255,29 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return receipts.filter(r => r.memberId === memberId).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }, [receipts]);
 
+  const addDonation = useCallback(async (donationData: Omit<Donation, 'id'>) => {
+    const created = await donationsApi.create(donationData) as Donation;
+    setDonations((prev) => [...prev, created]);
+  }, []);
+
+  const updateDonation = useCallback(async (id: string, updates: Partial<Donation>) => {
+    const updated = await donationsApi.update(id, updates) as Donation;
+    setDonations((prev) => prev.map((d) => (d.id === id ? updated : d)));
+  }, []);
+
+  const deleteDonation = useCallback(async (id: string) => {
+    await donationsApi.remove(id);
+    setDonations((prev) => prev.filter((d) => d.id !== id));
+  }, []);
+
   return (
     <AppContext.Provider value={{
-      members, payments, expenses, settings, receipts, loading,
+      members, payments, expenses, settings, receipts, donations, loading,
       addMember, updateMember, deleteMember, registerPayment, generateMonthlyPayments,
       getMemberPayments, addExpense, deleteExpense, updateSettings,
       submitReceipt, approveReceipt, rejectReceipt, getMemberReceipts,
       refreshPayments,
+      addDonation, updateDonation, deleteDonation,
     }}>
       {children}
     </AppContext.Provider>

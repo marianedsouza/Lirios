@@ -4,7 +4,7 @@ import { generatePaymentMonth, formatCurrency, getMonthName } from '../../lib/ut
 import { BirthdayAlert } from './BirthdayAlert';
 
 export function Dashboard() {
-  const { members, payments } = useAppStore();
+  const { members, payments, donations } = useAppStore();
   
   const currentMonth = generatePaymentMonth(new Date());
   const currentMonthPayments = payments.filter(p => p.month === currentMonth);
@@ -17,6 +17,11 @@ export function Dashboard() {
 
   const collectedAmount = paidPayments.reduce((acc, curr) => acc + curr.amount, 0);
   const expectedAmount = currentMonthPayments.reduce((acc, curr) => acc + curr.amount, 0);
+
+  const paidDonations = donations.filter(d => d.status === 'Pago');
+  const pendingDonations = donations.filter(d => d.status === 'Pendente');
+  const totalDonated = paidDonations.reduce((acc, d) => acc + d.amount, 0);
+  const totalDonationsPending = pendingDonations.reduce((acc, d) => acc + d.amount, 0);
 
   const progressPercent = expectedAmount > 0 ? Math.min(100, (collectedAmount / expectedAmount) * 100) : 0;
 
@@ -75,6 +80,20 @@ export function Dashboard() {
           <div className="absolute top-0 right-0 -mr-4 -mt-4 w-16 h-16 rounded-full bg-[#2E7A4A] opacity-20 blur-xl"></div>
           <p className="text-[10px] font-bold text-[#A3BCA7] uppercase tracking-wider mb-1 relative z-10">Arrecadado</p>
           <p className="text-xl md:text-2xl font-bold text-white relative z-10">{formatCurrency(collectedAmount)}</p>
+        </div>
+      </div>
+
+      {/* Doações */}
+      <div className="bg-white p-3 md:p-4 rounded-2xl border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex items-center justify-between gap-3 shrink-0">
+        <div className="min-w-0">
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Doações (fora da mensalidade)</p>
+          <p className="text-[10px] text-slate-400 truncate">
+            {paidDonations.length} confirmada(s) · {pendingDonations.length} pendente(s)
+          </p>
+        </div>
+        <div className="text-right shrink-0">
+          <p className="text-[10px] font-bold text-[#2F6A4F] uppercase tracking-wider">Recebido</p>
+          <p className="text-xl md:text-2xl font-bold text-[#2E7A4A]">{formatCurrency(totalDonated)}</p>
         </div>
       </div>
 

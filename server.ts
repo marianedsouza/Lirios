@@ -80,6 +80,7 @@ async function initDatabase() {
   await prisma!.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "payment_receipts" ("id" TEXT NOT NULL PRIMARY KEY, "payment_id" TEXT NOT NULL, "member_id" TEXT NOT NULL, "description" TEXT NOT NULL, "amount" REAL NOT NULL, "paid_at" TEXT NOT NULL, "status" TEXT NOT NULL DEFAULT 'Pendente', "reviewed_by" TEXT, "reviewed_at" TEXT, "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, "updated_at" TIMESTAMP NOT NULL, CONSTRAINT "payment_receipts_payment_id_fkey" FOREIGN KEY ("payment_id") REFERENCES "payments" ("id") ON DELETE CASCADE ON UPDATE CASCADE, CONSTRAINT "payment_receipts_member_id_fkey" FOREIGN KEY ("member_id") REFERENCES "members" ("id") ON DELETE CASCADE ON UPDATE CASCADE)`);
   await prisma!.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "expenses" ("id" TEXT NOT NULL PRIMARY KEY, "description" TEXT NOT NULL, "amount" REAL NOT NULL, "date" TEXT NOT NULL, "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, "updated_at" TIMESTAMP NOT NULL)`);
   await prisma!.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "app_settings" ("id" TEXT NOT NULL PRIMARY KEY, "pix_key" TEXT NOT NULL DEFAULT '', "bank_name" TEXT NOT NULL DEFAULT '', "account_name" TEXT NOT NULL DEFAULT '', "default_monthly_fee" REAL NOT NULL DEFAULT 50, "default_due_date" INTEGER NOT NULL DEFAULT 10, "house_guidelines" TEXT NOT NULL DEFAULT '', "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, "updated_at" TIMESTAMP NOT NULL)`);
+  await prisma!.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "donations" ("id" TEXT NOT NULL PRIMARY KEY, "member_id" TEXT, "donor_name" TEXT NOT NULL DEFAULT '', "description" TEXT NOT NULL DEFAULT '', "amount" REAL NOT NULL, "date" TEXT NOT NULL, "status" TEXT NOT NULL DEFAULT 'Pendente', "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, "updated_at" TIMESTAMP NOT NULL, CONSTRAINT "donations_member_id_fkey" FOREIGN KEY ("member_id") REFERENCES "members" ("id") ON DELETE SET NULL ON UPDATE CASCADE)`);
 }
 
 async function seed() {
@@ -518,9 +519,48 @@ app.put("/api/receipts/:id/reject", async (req, res) => {
   }
 });
 
-// ─── Settings ──────────────────────────────────────────────
-app.get("/api/settings", async (_req, res) => {
+// ─── Donations ─────────────────────────────────────────────
+app.get("/api/donations", async (_req, res) => {
   try {
+    const donations = await prisma!.donation.findMany({ orderBy: { createdAt: "desc" } });
+    res.json(donations);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post("/api/donations", async (req, res) => {
+  try {
+    const donation = await prisma!.donation.create({ data: req.body });
+    res.json(donation);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.put("/api/donations/:id", async (req, res) => {
+  try {
+    const donation = await prisma!.donation.update({
+      where: { id: req.params.id },
+      data: req.body,
+    });
+    res.json(donation);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.delete("/api/donations/:id", async (req, res) => {
+  try {
+    await prisma!.donation.delete({ where: { id: req.params.id } });
+    res.json({ ok: true });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ─── Settings ──────────────────────────────────────────────
+app.get("/api/settings", async (_req, res) => {  try {
     let settings = await prisma!.appSettings.findFirst();
     if (!settings) {
       settings = await prisma!.appSettings.create({

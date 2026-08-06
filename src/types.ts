@@ -57,3 +57,15 @@ export interface PaymentReceipt {
   createdAt?: string;
 }
 
+export type DonationStatus = 'Pendente' | 'Pago';
+
+export interface Donation {
+  id: string;
+  memberId: string | null;
+  donorName: string;
+  description: string;
+  amount: number;
+  date: string; // YYYY-MM-DD
+  status: DonationStatus;
+}
+

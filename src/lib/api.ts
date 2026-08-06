@@ -128,3 +128,21 @@ export const receiptsApi = {
   reject: (id: string, reviewedBy?: string) =>
     request<ReceiptData>(`/receipts/${id}/reject`, { method: 'PUT', body: JSON.stringify({ reviewedBy }) }),
 };
+
+// ─── Donations ─────────────────────────────────────────────
+export interface DonationData {
+  id?: string;
+  memberId: string | null;
+  donorName: string;
+  description: string;
+  amount: number;
+  date: string;
+  status: string;
+}
+
+export const donationsApi = {
+  list: () => request<DonationData[]>('/donations'),
+  create: (data: Omit<DonationData, 'id'>) => request<DonationData>('/donations', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id: string, data: Partial<DonationData>) => request<DonationData>(`/donations/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  remove: (id: string) => request<{ ok: boolean }>(`/donations/${id}`, { method: 'DELETE' }),
+};

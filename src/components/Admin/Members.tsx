@@ -22,6 +22,7 @@ export function Members() {
   const [editingMember, setEditingMember] = useState<Member | undefined>(undefined);
   const [viewingMember, setViewingMember] = useState<Member | undefined>(undefined);
   const [copied, setCopied] = useState(false);
+  const [memberToDelete, setMemberToDelete] = useState<Member | null>(null);
 
   const pendingCount = members.filter(m => (m.status as string) === 'Pendente').length;
 
@@ -87,9 +88,14 @@ export function Members() {
     await updateMember(member.id, { status: 'Ativo' });
   };
 
-  const handleDelete = async (member: Member) => {
-    if (!window.confirm(`Apagar "${member.name}" permanentemente? Todos os pagamentos associados também serão removidos.`)) return;
-    await deleteMember(member.id);
+  const handleDelete = (member: Member) => {
+    setMemberToDelete(member);
+  };
+
+  const confirmDelete = async () => {
+    if (!memberToDelete) return;
+    await deleteMember(memberToDelete.id);
+    setMemberToDelete(null);
   };
 
   if (viewingMember) {
@@ -306,6 +312,44 @@ export function Members() {
           </table>
         </div>
       </div>
+
+      {/* Confirmação de exclusão */}
+      {memberToDelete && (
+        <div
+          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+          onClick={() => setMemberToDelete(null)}
+        >
+          <div
+            className="bg-white rounded-xl shadow-lg p-6 max-w-sm w-full space-y-4"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-rose-100 text-rose-600 mx-auto">
+              <Trash2 size={22} />
+            </div>
+            <div className="text-center">
+              <h3 className="text-base font-bold text-gray-900">Excluir membro?</h3>
+              <p className="text-sm text-gray-500 mt-1">
+                Tem certeza que deseja excluir <strong>{memberToDelete.name}</strong>? Todos os
+                pagamentos associados também serão removidos. Esta ação não pode ser desfeita.
+              </p>
+            </div>
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => setMemberToDelete(null)}
+                className="flex-1 px-4 py-2.5 text-sm font-bold text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="flex-1 px-4 py-2.5 text-sm font-bold text-white bg-rose-600 rounded-lg hover:bg-rose-700 transition-colors"
+              >
+                Excluir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

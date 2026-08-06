@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useAppStore } from '../../store/useStore';
+import { Donation } from '../../types';
 import { generatePaymentMonth, formatCurrency, getMonthName } from '../../lib/utils';
 import { Printer, Users, CheckCircle, Clock, AlertTriangle, DollarSign } from 'lucide-react';
 
 export function Reports() {
-  const { members, payments, expenses } = useAppStore();
+  const { members, payments, expenses, donations } = useAppStore();
   const [view, setView] = useState<'mes' | 'geral'>('geral');
   const [selectedMonth, setSelectedMonth] = useState(generatePaymentMonth(new Date()));
   const [reportType, setReportType] = useState<'Pago' | 'Pendente' | 'Atrasado'>('Pago');
@@ -22,6 +23,18 @@ export function Reports() {
   const totalDelayed = allDelayed.reduce((acc, curr) => acc + curr.amount, 0);
   const totalExpenses = expenses.reduce((acc, curr) => acc + curr.amount, 0);
   const totalReceived = totalCollected - totalExpenses;
+
+  const paidDonations = donations.filter(d => d.status === 'Pago');
+  const pendingDonations = donations.filter(d => d.status === 'Pendente');
+  const totalDonations = paidDonations.reduce((acc, d) => acc + d.amount, 0);
+  const totalDonationsPending = pendingDonations.reduce((acc, d) => acc + d.amount, 0);
+  const donorName = (donation: Donation) => {
+    if (donation.memberId) {
+      const member = members.find(m => m.id === donation.memberId);
+      if (member) return member.name;
+    }
+    return donation.donorName || 'Doador anônimo';
+  };
 
   const monthsWithPayments = [...new Set(payments.map(p => p.month))].sort().reverse();
 
@@ -232,6 +245,58 @@ export function Reports() {
               </div>
             </div>
           )}
+
+          {/* Doações */}
+          <div className="bg-white border border-slate-100 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.03)] flex flex-col overflow-hidden shrink-0">
+            <div className="px-4 py-3 border-b border-slate-100 bg-[#F6F9F6] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <h3 className="text-[12px] font-bold text-[#1A4531] uppercase tracking-wider">Doações ({donations.length})</h3>
+              <div className="flex gap-3 text-[10px] font-bold">
+                <span className="text-[#2E7A4A]">Confirmadas: {formatCurrency(totalDonations)}</span>
+                <span className="text-amber-600">Pendentes: {formatCurrency(totalDonationsPending)}</span>
+              </div>
+            </div>
+            <div className="overflow-x-auto md:max-h-60 md:overflow-y-auto">
+              <table className="w-full text-left border-collapse">
+                <thead className="bg-white sticky top-0 z-10 shadow-sm">
+                  <tr>
+                    <th className="px-4 py-3 text-[10px] font-bold text-[#2F6A4F] uppercase tracking-wider border-b border-slate-100">Doador</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-[#2F6A4F] uppercase tracking-wider border-b border-slate-100">Descrição</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-[#2F6A4F] uppercase tracking-wider border-b border-slate-100">Data</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-[#2F6A4F] uppercase tracking-wider border-b border-slate-100">Status</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-[#2F6A4F] uppercase tracking-wider border-b border-slate-100 text-right">Valor</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {donations.map(donation => (
+                    <tr key={donation.id} className="hover:bg-slate-50">
+                      <td className="px-4 py-2 text-xs font-bold text-slate-800">{donorName(donation)}</td>
+                      <td className="px-4 py-2 text-[10px] text-slate-500">{donation.description || '—'}</td>
+                      <td className="px-4 py-2 text-[10px] text-slate-500 font-mono">{donation.date.split('-').reverse().join('/')}</td>
+                      <td className="px-4 py-2">
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                          donation.status === 'Pago' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                        }`}>
+                          {donation.status.toUpperCase()}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2 text-xs font-bold text-[#2E7A4A] text-right">{formatCurrency(donation.amount)}</td>
+                    </tr>
+                  ))}
+                  {donations.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="px-4 py-8 text-center text-xs text-slate-500">Nenhuma doação registrada.</td>
+                    </tr>
+                  )}
+                </tbody>
+                <tfoot className="bg-slate-50 border-t-2 border-slate-200">
+                  <tr>
+                    <td colSpan={4} className="px-4 py-2 text-xs font-bold text-slate-800 uppercase">Total Confirmado</td>
+                    <td className="px-4 py-2 text-xs font-bold text-[#2E7A4A] text-right">{formatCurrency(totalDonations)}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
         </>
       )}
 
