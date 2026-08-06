@@ -39,7 +39,7 @@ export function Login({ onLogin }: LoginProps) {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans relative overflow-hidden bg-[#F6F9F6]">
+    <div className="min-h-screen flex flex-col justify-center py-6 px-4 sm:px-6 lg:px-8 font-sans relative overflow-hidden bg-[#F6F9F6]">
       {/* Imagem de Fundo */}
       <div className="absolute inset-0 z-0 pointer-events-none">
         <div className="hidden md:block relative w-full h-full">
@@ -61,29 +61,29 @@ export function Login({ onLogin }: LoginProps) {
       </div>
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center relative z-10">
-        <div className="mx-auto h-[150px] w-[150px] flex items-center justify-center">
+        <div className="mx-auto h-[120px] w-[120px] sm:h-[150px] sm:w-[150px] flex items-center justify-center">
           <img src={logo} alt="Logo Lírios do Pântano" className="w-full h-full object-contain" />
         </div>
-        <h2 className="mt-6 text-[36px] font-medium text-[#1A4531] font-serif tracking-tight">Lírios do Pântano</h2>
+        <h2 className="mt-2 sm:mt-6 text-[28px] sm:text-[36px] font-medium text-[#1A4531] font-serif tracking-tight leading-tight">Lírios do Pântano</h2>
         
-        <div className="flex items-center justify-center mt-3 mb-2 opacity-70">
+        <div className="flex items-center justify-center mt-2 sm:mt-3 mb-1 sm:mb-2 opacity-70">
           <div className="h-[1px] w-12 bg-[#8C9A8E] opacity-50"></div>
           <Flower2 size={16} className="mx-3 text-[#5A7A5F]" />
           <div className="h-[1px] w-12 bg-[#8C9A8E] opacity-50"></div>
         </div>
         
-        <p className="mt-2 text-[13px] text-[#2F6A4F] font-semibold uppercase tracking-[0.15em]">Controle de Mensalidades</p>
+        <p className="mt-1 sm:mt-2 text-[11px] sm:text-[13px] text-[#2F6A4F] font-semibold uppercase tracking-[0.15em]">Controle de Mensalidades</p>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-[440px] relative z-10">
-        <div className="bg-white py-10 px-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] sm:rounded-2xl sm:px-12 w-full">
+      <div className="mt-6 sm:mt-8 sm:mx-auto sm:w-full sm:max-w-[440px] relative z-10 w-full max-w-[400px] mx-auto">
+        <div className="bg-white py-6 px-6 sm:py-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-2xl sm:px-10 w-full">
           {error && (
-            <div className="mb-6 p-3 bg-rose-50 border border-rose-100 rounded-lg text-sm text-rose-600 text-center font-medium">
+            <div className="mb-4 sm:mb-6 p-3 bg-rose-50 border border-rose-100 rounded-lg text-sm text-rose-600 text-center font-medium">
               {error}
             </div>
           )}
 
-          <form onSubmit={handleLogin} className="space-y-6">
+          <form onSubmit={handleLogin} className="space-y-4 sm:space-y-5">
             <div>
               <div className="flex items-center mb-2">
                 <div className="h-8 w-8 rounded-full bg-[#EEF4F0] flex items-center justify-center mr-3">
@@ -128,7 +128,7 @@ export function Login({ onLogin }: LoginProps) {
               </div>
             </div>
             
-            <div className="pt-2">
+            <div className="pt-1 sm:pt-2">
               <button
                 type="submit"
                 disabled={loading}
@@ -143,19 +143,19 @@ export function Login({ onLogin }: LoginProps) {
             </div>
           </form>
 
-          <div className="mt-10 relative">
+          <div className="mt-6 sm:mt-8 relative">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-slate-200"></div>
             </div>
             <div className="relative flex justify-center text-sm">
               <div className="bg-white px-3 flex items-center justify-center">
-                <ShieldCheck size={22} className="text-[#1A4531]" strokeWidth={1.5} />
+                <ShieldCheck size={20} className="text-[#1A4531]" strokeWidth={1.5} />
               </div>
             </div>
           </div>
           
-          <div className="mt-6 flex items-center justify-center text-[13.5px] text-slate-600 font-medium text-center">
-            <ShieldCheck size={16} className="text-[#1A4531] mr-2 flex-shrink-0" strokeWidth={2} />
+          <div className="mt-4 sm:mt-5 flex items-center justify-center text-[11px] sm:text-[12px] text-slate-600 font-medium text-center leading-snug">
+            <ShieldCheck size={14} className="text-[#1A4531] mr-1.5 flex-shrink-0" strokeWidth={2} />
             <span>Acesso restrito. Sistema exclusivo para Dirigentes e Membros do Grupo da Casa de Amparo Lírios do Pântano</span>
           </div>
         </div>
