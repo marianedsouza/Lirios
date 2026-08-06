@@ -130,6 +130,7 @@ export function Login({ onLogin }: LoginProps) {
             
             <div className="pt-1 sm:pt-2">
               <button
+                id="btn-login"
                 type="submit"
                 disabled={loading}
                 className="w-full h-12 bg-[#2E7A4A] hover:bg-[#23603A] active:bg-[#1A4529] disabled:opacity-70 text-white font-bold text-[14px] uppercase tracking-[0.1em] rounded-xl transition-all shadow-[0_4px_14px_rgba(46,122,74,0.3)] flex items-center justify-center"
