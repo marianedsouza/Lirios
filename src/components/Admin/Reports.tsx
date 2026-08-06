@@ -2,13 +2,17 @@ import React, { useState } from 'react';
 import { useAppStore } from '../../store/useStore';
 import { Donation } from '../../types';
 import { generatePaymentMonth, formatCurrency, getMonthName } from '../../lib/utils';
-import { Printer, Users, CheckCircle, Clock, AlertTriangle, DollarSign, HeartHandshake } from 'lucide-react';
+import { Printer, Users, CheckCircle, Clock, AlertTriangle, DollarSign, HeartHandshake, Trash2, Search } from 'lucide-react';
 
 export function Reports() {
-  const { members, payments, expenses, donations } = useAppStore();
+  const { members, payments, expenses, donations, deleteDonation } = useAppStore();
   const [view, setView] = useState<'mes' | 'geral'>('geral');
   const [selectedMonth, setSelectedMonth] = useState(generatePaymentMonth(new Date()));
   const [reportType, setReportType] = useState<'Pago' | 'Pendente' | 'Atrasado'>('Pago');
+
+  const [donationView, setDonationView] = useState<'geral' | 'mes'>('geral');
+  const [donationMonth, setDonationMonth] = useState(generatePaymentMonth(new Date()));
+  const [donationSearch, setDonationSearch] = useState('');
 
   const filteredPayments = view === 'mes'
     ? payments.filter(p => p.month === selectedMonth && p.status === reportType)
@@ -25,7 +29,6 @@ export function Reports() {
   const totalReceived = totalCollected - totalExpenses;
 
   const paidDonations = donations.filter(d => d.status === 'Pago');
-  const totalDonations = paidDonations.reduce((acc, d) => acc + d.amount, 0);
   const donationMonths = [...new Set(paidDonations.map(d => d.month))].sort().reverse();
   const donationsByMonth = donationMonths.map(month => {
     const list = paidDonations.filter(d => d.month === month);
@@ -35,13 +38,34 @@ export function Reports() {
       total: list.reduce((acc, d) => acc + d.amount, 0),
     };
   });
-  const totalDonors = new Set(paidDonations.map(d => d.memberId).filter(Boolean)).size;
   const donorName = (donation: Donation) => {
     if (donation.memberId) {
       const member = members.find(m => m.id === donation.memberId);
       if (member) return member.name;
     }
     return donation.donorName || 'Doador anônimo';
+  };
+
+  const scopePaidDonations = donationView === 'mes'
+    ? paidDonations.filter(d => d.month === donationMonth)
+    : paidDonations;
+  const scopeDonationTotal = scopePaidDonations.reduce((acc, d) => acc + d.amount, 0);
+  const scopeMensalidadeTotal = donationView === 'mes'
+    ? payments.filter(p => p.month === donationMonth && p.status === 'Pago').reduce((acc, p) => acc + p.amount, 0)
+    : totalCollected;
+  const scopeCombinedTotal = scopeMensalidadeTotal + scopeDonationTotal;
+
+  const searchTerm = donationSearch.trim().toLowerCase();
+  const searchedDonations = scopePaidDonations.filter(d =>
+    !searchTerm ||
+    donorName(d).toLowerCase().includes(searchTerm) ||
+    (d.description || '').toLowerCase().includes(searchTerm)
+  ).sort((a, b) => b.date.localeCompare(a.date));
+  const searchedDonationTotal = searchedDonations.reduce((acc, d) => acc + d.amount, 0);
+
+  const handleDeleteDonation = async (donation: Donation) => {
+    if (!window.confirm(`Excluir doação de ${donation.donorName || donorName(donation)} (${formatCurrency(donation.amount)})?`)) return;
+    await deleteDonation(donation.id);
   };
 
   const monthsWithPayments = [...new Set(payments.map(p => p.month))].sort().reverse();
@@ -259,27 +283,74 @@ export function Reports() {
             <div className="px-4 py-3 border-b border-slate-100 bg-[#1A4531] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <h3 className="text-[12px] font-bold text-white uppercase tracking-wider flex items-center gap-2">
                 <HeartHandshake size={14} className="text-emerald-300" />
-                Doações Confirmadas ({paidDonations.length})
+                Doações e Contribuições
               </h3>
-              <span className="text-xs font-bold text-emerald-300">Total: {formatCurrency(totalDonations)}</span>
+              <span className="text-xs font-bold text-emerald-300">
+                Total: {formatCurrency(scopeCombinedTotal)}
+              </span>
             </div>
 
-            <div className="grid grid-cols-3 gap-3 p-4 border-b border-slate-100 bg-[#F6F9F6]">
-              <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Total Doado</p>
-                <p className="text-lg md:text-xl font-bold text-[#2E7A4A]">{formatCurrency(totalDonations)}</p>
+            {/* Filtros */}
+            <div className="px-4 py-3 border-b border-slate-100 bg-[#F6F9F6] flex flex-col sm:flex-row flex-wrap items-center gap-2">
+              <div className="flex bg-white border border-slate-200 rounded-xl p-0.5 shadow-sm">
+                <button
+                  onClick={() => setDonationView('geral')}
+                  className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                    donationView === 'geral'
+                      ? 'bg-[#1A4531] text-white shadow-sm'
+                      : 'text-slate-500 hover:text-[#1A4531]'
+                  }`}
+                >
+                  Geral
+                </button>
+                <button
+                  onClick={() => setDonationView('mes')}
+                  className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                    donationView === 'mes'
+                      ? 'bg-[#1A4531] text-white shadow-sm'
+                      : 'text-slate-500 hover:text-[#1A4531]'
+                  }`}
+                >
+                  Mês Atual
+                </button>
               </div>
-              <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Doações</p>
-                <p className="text-lg md:text-xl font-bold text-[#1A4531]">{paidDonations.length}</p>
-              </div>
-              <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Doadores</p>
-                <p className="text-lg md:text-xl font-bold text-[#1A4531]">{totalDonors}</p>
+              {donationView === 'mes' && (
+                <input
+                  type="month"
+                  value={donationMonth}
+                  onChange={e => setDonationMonth(e.target.value)}
+                  className="text-xs border border-slate-200 rounded-lg px-3 py-1.5 bg-white font-mono focus:outline-[#2E7A4A] focus:ring-1 focus:ring-[#2E7A4A]"
+                />
+              )}
+              <div className="flex items-center gap-2 flex-1 min-w-[180px] bg-white border border-slate-200 rounded-lg px-3 py-1.5 shadow-sm">
+                <Search size={13} className="text-slate-400 shrink-0" />
+                <input
+                  type="text"
+                  placeholder="Pesquisar doador..."
+                  value={donationSearch}
+                  onChange={e => setDonationSearch(e.target.value)}
+                  className="flex-1 text-xs border-none outline-none bg-transparent"
+                />
               </div>
             </div>
 
-            {donationsByMonth.length > 0 && (
+            {/* Mensalidade | Doação | Total */}
+            <div className="grid grid-cols-3 gap-2 md:gap-3 p-3 md:p-4 border-b border-slate-100 bg-white">
+              <div className="bg-[#F6F9F6] border border-slate-100 rounded-xl px-2 py-2.5 text-center min-w-0">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Mensalidade</p>
+                <p className="text-sm md:text-lg font-bold text-[#1A4531] whitespace-nowrap tabular-nums">{formatCurrency(scopeMensalidadeTotal)}</p>
+              </div>
+              <div className="bg-[#F6F9F6] border border-slate-100 rounded-xl px-2 py-2.5 text-center min-w-0">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Doação</p>
+                <p className="text-sm md:text-lg font-bold text-[#2E7A4A] whitespace-nowrap tabular-nums">{formatCurrency(scopeDonationTotal)}</p>
+              </div>
+              <div className="bg-[#1A4531] border border-[#23603A] rounded-xl px-2 py-2.5 text-center min-w-0">
+                <p className="text-[10px] font-bold text-[#A3BCA7] uppercase tracking-wider mb-1">Total</p>
+                <p className="text-sm md:text-lg font-bold text-white whitespace-nowrap tabular-nums">{formatCurrency(scopeCombinedTotal)}</p>
+              </div>
+            </div>
+
+            {donationView === 'geral' && donationsByMonth.length > 0 && (
               <div className="border-b border-slate-100">
                 <div className="px-4 py-2 bg-[#EEF4F0]">
                   <p className="text-[10px] font-bold text-[#2F6A4F] uppercase tracking-wider">Doações por Mês</p>
@@ -296,7 +367,7 @@ export function Reports() {
                     <tr className="bg-slate-50">
                       <td className="px-4 py-2 text-[10px] font-bold text-slate-800 uppercase">Total</td>
                       <td className="px-4 py-2"></td>
-                      <td className="px-4 py-2 text-xs font-bold text-[#2E7A4A] text-right">{formatCurrency(totalDonations)}</td>
+                      <td className="px-4 py-2 text-xs font-bold text-[#2E7A4A] text-right">{formatCurrency(scopeDonationTotal)}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -312,28 +383,39 @@ export function Reports() {
                     <th className="px-4 py-3 text-[10px] font-bold text-[#2F6A4F] uppercase tracking-wider border-b border-slate-100">Mês</th>
                     <th className="px-4 py-3 text-[10px] font-bold text-[#2F6A4F] uppercase tracking-wider border-b border-slate-100">Data</th>
                     <th className="px-4 py-3 text-[10px] font-bold text-[#2F6A4F] uppercase tracking-wider border-b border-slate-100 text-right">Valor</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-[#2F6A4F] uppercase tracking-wider border-b border-slate-100"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
-                  {paidDonations.map(donation => (
+                  {searchedDonations.map(donation => (
                     <tr key={donation.id} className="hover:bg-slate-50">
                       <td className="px-4 py-2 text-xs font-bold text-slate-800">{donorName(donation)}</td>
                       <td className="px-4 py-2 text-[10px] text-slate-500">{donation.description || '—'}</td>
                       <td className="px-4 py-2 text-[10px] text-slate-600 font-mono capitalize">{getMonthName(donation.month)}</td>
                       <td className="px-4 py-2 text-[10px] text-slate-500 font-mono">{donation.date.split('-').reverse().join('/')}</td>
                       <td className="px-4 py-2 text-xs font-bold text-[#2E7A4A] text-right">{formatCurrency(donation.amount)}</td>
+                      <td className="px-4 py-2 text-right">
+                        <button
+                          onClick={() => handleDeleteDonation(donation)}
+                          className="text-rose-400 hover:text-rose-600 transition-colors"
+                          title="Excluir doação"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </td>
                     </tr>
                   ))}
-                  {paidDonations.length === 0 && (
+                  {searchedDonations.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="px-4 py-8 text-center text-xs text-slate-500">Nenhuma doação confirmada.</td>
+                      <td colSpan={6} className="px-4 py-8 text-center text-xs text-slate-500">Nenhuma doação encontrada para este filtro.</td>
                     </tr>
                   )}
                 </tbody>
                 <tfoot className="bg-slate-50 border-t-2 border-slate-200">
                   <tr>
                     <td colSpan={4} className="px-4 py-2 text-xs font-bold text-slate-800 uppercase">Total</td>
-                    <td className="px-4 py-2 text-xs font-bold text-[#2E7A4A] text-right">{formatCurrency(totalDonations)}</td>
+                    <td className="px-4 py-2 text-xs font-bold text-[#2E7A4A] text-right">{formatCurrency(searchedDonationTotal)}</td>
+                    <td></td>
                   </tr>
                 </tfoot>
               </table>

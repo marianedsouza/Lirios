@@ -1,18 +1,17 @@
 import React, { useState } from 'react';
-import { Users, LayoutDashboard, FileText, LogOut, Menu, X, Wallet, Settings as SettingsIcon, HeartHandshake } from 'lucide-react';
+import { Users, LayoutDashboard, FileText, LogOut, Menu, X, Wallet, Settings as SettingsIcon } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { Dashboard } from './Admin/Dashboard';
 import { Members } from './Admin/Members';
 import { Reports } from './Admin/Reports';
 import { Caixa } from './Admin/Caixa';
 import { Settings } from './Admin/Settings';
-import { Donations } from './Admin/Donations';
 
 interface AdminLayoutProps {
   onLogout: () => void;
 }
 
-type Tab = 'dashboard' | 'members' | 'reports' | 'caixa' | 'settings' | 'donations';
+type Tab = 'dashboard' | 'members' | 'reports' | 'caixa' | 'settings';
 
 export function AdminLayout({ onLogout }: AdminLayoutProps) {
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
@@ -22,7 +21,6 @@ export function AdminLayout({ onLogout }: AdminLayoutProps) {
     { name: 'Painel Geral', id: 'dashboard', icon: LayoutDashboard },
     { name: 'Caixa e Despesas', id: 'caixa', icon: Wallet },
     { name: 'Membros', id: 'members', icon: Users },
-    { name: 'Doações', id: 'donations', icon: HeartHandshake },
     { name: 'Relatórios', id: 'reports', icon: FileText },
     { name: 'Configurações', id: 'settings', icon: SettingsIcon },
   ];
@@ -32,7 +30,6 @@ export function AdminLayout({ onLogout }: AdminLayoutProps) {
       case 'dashboard': return <Dashboard />;
       case 'caixa': return <Caixa />;
       case 'members': return <Members />;
-      case 'donations': return <Donations />;
       case 'reports': return <Reports />;
       case 'settings': return <Settings />;
       default: return <Dashboard />;
@@ -44,7 +41,6 @@ export function AdminLayout({ onLogout }: AdminLayoutProps) {
       case 'dashboard': return 'Dashboard Administrativo';
       case 'caixa': return 'Controle de Caixa e Despesas';
       case 'members': return 'Lista de Membros';
-      case 'donations': return 'Doações';
       case 'reports': return 'Relatórios e Exportações';
       case 'settings': return 'Configurações do Sistema';
       default: return 'Dashboard Administrativo';
