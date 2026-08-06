@@ -19,7 +19,14 @@ export function Dashboard() {
   const expectedAmount = currentMonthPayments.reduce((acc, curr) => acc + curr.amount, 0);
 
   const paidDonations = donations.filter(d => d.status === 'Pago');
-  const totalDonated = paidDonations.reduce((acc, d) => acc + d.amount, 0);
+  const currentMonthPaidDonations = paidDonations.filter(d => d.month === currentMonth);
+  const monthDonated = currentMonthPaidDonations.reduce((acc, d) => acc + d.amount, 0);
+  const totalMonthCollected = collectedAmount + monthDonated;
+
+  const donorNameFor = (d: { memberId: string | null; donorName: string }) => {
+    const member = members.find(m => m.id === d.memberId);
+    return member ? member.name : d.donorName || 'Doador anônimo';
+  };
 
   const progressPercent = expectedAmount > 0 ? Math.min(100, (collectedAmount / expectedAmount) * 100) : 0;
 
@@ -40,6 +47,31 @@ export function Dashboard() {
     return <span className="px-2 py-0.5 bg-rose-100 text-rose-700 rounded text-[10px] font-bold">ATRASADO</span>;
   };
 
+  const monitorRows = [
+    ...currentMonthPaidDonations.map(d => ({
+      key: `d-${d.id}`,
+      kind: 'doacao' as const,
+      name: donorNameFor(d),
+      whatsapp: '',
+      dateLabel: d.date.split('-').reverse().join('/'),
+      amount: d.amount,
+      status: 'Pago',
+    })),
+    ...sortedPayments.map(p => {
+      const member = members.find(m => m.id === p.memberId);
+      if (!member) return null;
+      return {
+        key: `p-${p.id}`,
+        kind: 'mensalidade' as const,
+        name: member.name,
+        whatsapp: member.whatsapp,
+        dateLabel: paymentDateLabel(p, member),
+        amount: p.amount,
+        status: p.status,
+      };
+    }).filter(Boolean) as Array<{ key: string; kind: 'doacao' | 'mensalidade'; name: string; whatsapp: string; dateLabel: string; amount: number; status: string }>,
+  ];
+
   return (
     <>
       {/* Birthday Alert */}
@@ -53,7 +85,7 @@ export function Dashboard() {
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4 shrink-0">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 shrink-0">
         <div className="bg-white p-3 md:p-4 rounded-2xl border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Total Membros</p>
           <p className="text-xl md:text-2xl font-bold text-[#1A4531]">{members.length}</p>
@@ -66,32 +98,40 @@ export function Dashboard() {
             <div className="bg-[#2E7A4A] h-1.5 rounded-full" style={{ width: `${progressPercent}%` }}></div>
           </div>
         </div>
-        <div className="bg-white p-2 md:p-3 rounded-2xl border border-amber-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] bg-amber-50/30">
-          <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider mb-0.5">Pendentes</p>
-          <p className="text-lg md:text-2xl font-bold text-amber-600">{pendingPayments.length}</p>
+        <div className="bg-white p-3 md:p-4 rounded-2xl border border-amber-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] bg-amber-50/30">
+          <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider mb-1">Pendentes</p>
+          <p className="text-xl md:text-2xl font-bold text-amber-600">{pendingPayments.length}</p>
         </div>
-        <div className="bg-white p-2 md:p-3 rounded-2xl border border-rose-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] bg-rose-50/30">
-          <p className="text-[10px] font-bold text-rose-600 uppercase tracking-wider mb-0.5">Atrasados</p>
-          <p className="text-lg md:text-2xl font-bold text-rose-600">{delayedPayments.length}</p>
-        </div>
-        <div className="col-span-2 lg:col-span-1 bg-[#1A4531] p-3 md:p-4 rounded-2xl border border-[#23603A] shadow-[0_4px_20px_rgba(0,0,0,0.06)] relative overflow-hidden">
-          <div className="absolute top-0 right-0 -mr-4 -mt-4 w-16 h-16 rounded-full bg-[#2E7A4A] opacity-20 blur-xl"></div>
-          <p className="text-[10px] font-bold text-[#A3BCA7] uppercase tracking-wider mb-1 relative z-10">Arrecadado</p>
-          <p className="text-xl md:text-2xl font-bold text-white relative z-10">{formatCurrency(collectedAmount)}</p>
+        <div className="bg-white p-3 md:p-4 rounded-2xl border border-rose-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] bg-rose-50/30">
+          <p className="text-[10px] font-bold text-rose-600 uppercase tracking-wider mb-1">Atrasados</p>
+          <p className="text-xl md:text-2xl font-bold text-rose-600">{delayedPayments.length}</p>
         </div>
       </div>
 
-      {/* Doações */}
-      <div className="bg-white p-3 md:p-4 rounded-2xl border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex items-center justify-between gap-3 shrink-0">
-        <div className="min-w-0">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Doações (fora da mensalidade)</p>
-          <p className="text-[10px] text-slate-400 truncate">
-            {paidDonations.length} confirmada(s)
+      {/* Arrecadado no mês — Mensalidade | Doação | Total */}
+      <div className="bg-[#1A4531] rounded-2xl border border-[#23603A] shadow-[0_8px_30px_rgba(0,0,0,0.08)] p-4 md:p-6 relative overflow-hidden shrink-0">
+        <div className="absolute top-0 right-0 -mr-10 -mt-10 w-40 h-40 rounded-full bg-[#2E7A4A] opacity-20 blur-2xl"></div>
+        <div className="flex items-center justify-between gap-3 mb-4 relative z-10">
+          <p className="text-[10px] font-bold text-[#A3BCA7] uppercase tracking-widest">
+            Arrecadado no Mês · {getMonthName(currentMonth)}
+          </p>
+          <p className="text-[10px] font-bold text-[#A3BCA7] uppercase tracking-widest">
+            {paidPayments.length} mensalidade(s) · {currentMonthPaidDonations.length} doação(ões)
           </p>
         </div>
-        <div className="text-right shrink-0">
-          <p className="text-[10px] font-bold text-[#2F6A4F] uppercase tracking-wider">Recebido</p>
-          <p className="text-xl md:text-2xl font-bold text-[#2E7A4A]">{formatCurrency(totalDonated)}</p>
+        <div className="grid grid-cols-3 gap-3 md:gap-6 relative z-10">
+          <div className="bg-[#23603A]/40 border border-white/10 rounded-xl px-3 py-3 md:py-4 text-center">
+            <p className="text-[10px] font-bold text-[#A3BCA7] uppercase tracking-wider mb-1">Mensalidade</p>
+            <p className="text-base md:text-2xl font-bold text-white">{formatCurrency(collectedAmount)}</p>
+          </div>
+          <div className="bg-[#23603A]/40 border border-white/10 rounded-xl px-3 py-3 md:py-4 text-center">
+            <p className="text-[10px] font-bold text-[#A3BCA7] uppercase tracking-wider mb-1">Doação</p>
+            <p className="text-base md:text-2xl font-bold text-emerald-300">{formatCurrency(monthDonated)}</p>
+          </div>
+          <div className="bg-[#2E7A4A]/60 border border-[#A3BCA7]/30 rounded-xl px-3 py-3 md:py-4 text-center shadow-inner">
+            <p className="text-[10px] font-bold text-[#A3BCA7] uppercase tracking-wider mb-1">Total</p>
+            <p className="text-base md:text-2xl font-bold text-white">{formatCurrency(totalMonthCollected)}</p>
+          </div>
         </div>
       </div>
 
@@ -104,24 +144,25 @@ export function Dashboard() {
             <h3 className="text-[12px] font-bold text-[#1A4531] uppercase tracking-wider">Monitor de Pagamentos Recentes</h3>
           </div>
           <div className="divide-y divide-slate-50">
-            {sortedPayments.map(payment => {
-              const member = members.find(m => m.id === payment.memberId);
-              if (!member) return null;
-              return (
-                <div key={payment.id} className="px-4 py-3 flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-slate-800 truncate">{member.name}</p>
-                    <p className="text-[10px] text-slate-400 font-mono truncate">{member.whatsapp}</p>
-                    <p className="text-[10px] text-slate-500 font-mono mt-1">{paymentDateLabel(payment, member)}</p>
+            {monitorRows.map(row => (
+              <div key={row.key} className="px-4 py-3 flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    {row.kind === 'doacao' && (
+                      <span className="px-1.5 py-0.5 bg-[#1A4531] text-emerald-200 rounded text-[9px] font-bold uppercase tracking-wider">Doação</span>
+                    )}
+                    <p className="text-xs font-bold text-slate-800 truncate">{row.name}</p>
                   </div>
-                  <div className="text-right shrink-0">
-                    <p className="text-xs font-bold text-slate-800 mb-1">{formatCurrency(payment.amount)}</p>
-                    {statusBadge(payment.status)}
-                  </div>
+                  {row.whatsapp && <p className="text-[10px] text-slate-400 font-mono truncate">{row.whatsapp}</p>}
+                  <p className="text-[10px] text-slate-500 font-mono mt-1">{row.dateLabel}</p>
                 </div>
-              );
-            })}
-            {sortedPayments.length === 0 && (
+                <div className="text-right shrink-0">
+                  <p className="text-xs font-bold text-slate-800 mb-1">{formatCurrency(row.amount)}</p>
+                  {statusBadge(row.status)}
+                </div>
+              </div>
+            ))}
+            {monitorRows.length === 0 && (
               <div className="px-4 py-8 text-center text-xs text-slate-500">Nenhum pagamento registrado.</div>
             )}
           </div>
@@ -137,33 +178,38 @@ export function Dashboard() {
               <thead className="bg-white sticky top-0 z-10 shadow-sm">
                 <tr>
                   <th className="px-4 py-3 text-[10px] font-bold text-[#2F6A4F] uppercase tracking-wider border-b border-slate-100">Membro</th>
+                  <th className="px-4 py-3 text-[10px] font-bold text-[#2F6A4F] uppercase tracking-wider border-b border-slate-100">Tipo</th>
                   <th className="px-4 py-3 text-[10px] font-bold text-[#2F6A4F] uppercase tracking-wider border-b border-slate-100">Data/Pgto</th>
                   <th className="px-4 py-3 text-[10px] font-bold text-[#2F6A4F] uppercase tracking-wider border-b border-slate-100">Valor</th>
                   <th className="px-4 py-3 text-[10px] font-bold text-[#2F6A4F] uppercase tracking-wider border-b border-slate-100">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {sortedPayments.map(payment => {
-                  const member = members.find(m => m.id === payment.memberId);
-                  if (!member) return null;
-
-                  const isAtrasado = payment.status === 'Atrasado';
+                {monitorRows.map(row => {
+                  const isAtrasado = row.status === 'Atrasado';
                   return (
-                    <tr key={payment.id} className={`hover:bg-slate-50 ${isAtrasado ? 'bg-rose-50/20' : ''}`}>
+                    <tr key={row.key} className={`hover:bg-slate-50 ${isAtrasado ? 'bg-rose-50/20' : ''}`}>
                       <td className="px-4 py-2.5">
-                        <div className="text-xs font-bold text-slate-800">{member.name}</div>
-                        <div className="text-[10px] text-slate-400 font-mono">{member.whatsapp}</div>
+                        <div className="text-xs font-bold text-slate-800">{row.name}</div>
+                        {row.whatsapp && <div className="text-[10px] text-slate-400 font-mono">{row.whatsapp}</div>}
+                      </td>
+                      <td className="px-4 py-2.5">
+                        {row.kind === 'doacao' ? (
+                          <span className="px-2 py-0.5 bg-[#1A4531] text-emerald-200 rounded text-[10px] font-bold uppercase tracking-wider">Doação</span>
+                        ) : (
+                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Mensalidade</span>
+                        )}
                       </td>
                       <td className="px-4 py-2.5 text-xs text-slate-500 font-mono">
-                        {paymentDateLabel(payment, member)}
+                        {row.dateLabel}
                       </td>
-                      <td className="px-4 py-2.5 text-xs font-bold text-slate-800">{formatCurrency(payment.amount)}</td>
-                      <td className="px-4 py-2.5">{statusBadge(payment.status)}</td>
+                      <td className="px-4 py-2.5 text-xs font-bold text-slate-800">{formatCurrency(row.amount)}</td>
+                      <td className="px-4 py-2.5">{statusBadge(row.status)}</td>
                     </tr>
                   );
                 })}
-                {sortedPayments.length === 0 && (
-                  <tr><td colSpan={4} className="px-4 py-8 text-center text-xs text-slate-500">Nenhum pagamento registrado.</td></tr>
+                {monitorRows.length === 0 && (
+                  <tr><td colSpan={5} className="px-4 py-8 text-center text-xs text-slate-500">Nenhum pagamento registrado.</td></tr>
                 )}
               </tbody>
             </table>

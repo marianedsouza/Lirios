@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAppStore } from '../../store/useStore';
 import { Donation } from '../../types';
 import { generatePaymentMonth, formatCurrency, getMonthName } from '../../lib/utils';
-import { Printer, Users, CheckCircle, Clock, AlertTriangle, DollarSign } from 'lucide-react';
+import { Printer, Users, CheckCircle, Clock, AlertTriangle, DollarSign, HeartHandshake } from 'lucide-react';
 
 export function Reports() {
   const { members, payments, expenses, donations } = useAppStore();
@@ -26,6 +26,16 @@ export function Reports() {
 
   const paidDonations = donations.filter(d => d.status === 'Pago');
   const totalDonations = paidDonations.reduce((acc, d) => acc + d.amount, 0);
+  const donationMonths = [...new Set(paidDonations.map(d => d.month))].sort().reverse();
+  const donationsByMonth = donationMonths.map(month => {
+    const list = paidDonations.filter(d => d.month === month);
+    return {
+      month,
+      count: list.length,
+      total: list.reduce((acc, d) => acc + d.amount, 0),
+    };
+  });
+  const totalDonors = new Set(paidDonations.map(d => d.memberId).filter(Boolean)).size;
   const donorName = (donation: Donation) => {
     if (donation.memberId) {
       const member = members.find(m => m.id === donation.memberId);
@@ -245,11 +255,54 @@ export function Reports() {
           )}
 
           {/* Doações */}
-          <div className="bg-white border border-slate-100 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.03)] flex flex-col overflow-hidden shrink-0">
-            <div className="px-4 py-3 border-b border-slate-100 bg-[#F6F9F6] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-              <h3 className="text-[12px] font-bold text-[#1A4531] uppercase tracking-wider">Doações Confirmadas ({paidDonations.length})</h3>
-              <span className="text-[10px] font-bold text-[#2E7A4A]">Total: {formatCurrency(totalDonations)}</span>
+          <div className="bg-white border border-slate-100 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.03)] overflow-hidden shrink-0">
+            <div className="px-4 py-3 border-b border-slate-100 bg-[#1A4531] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <h3 className="text-[12px] font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                <HeartHandshake size={14} className="text-emerald-300" />
+                Doações Confirmadas ({paidDonations.length})
+              </h3>
+              <span className="text-xs font-bold text-emerald-300">Total: {formatCurrency(totalDonations)}</span>
             </div>
+
+            <div className="grid grid-cols-3 gap-3 p-4 border-b border-slate-100 bg-[#F6F9F6]">
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Total Doado</p>
+                <p className="text-lg md:text-xl font-bold text-[#2E7A4A]">{formatCurrency(totalDonations)}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Doações</p>
+                <p className="text-lg md:text-xl font-bold text-[#1A4531]">{paidDonations.length}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Doadores</p>
+                <p className="text-lg md:text-xl font-bold text-[#1A4531]">{totalDonors}</p>
+              </div>
+            </div>
+
+            {donationsByMonth.length > 0 && (
+              <div className="border-b border-slate-100">
+                <div className="px-4 py-2 bg-[#EEF4F0]">
+                  <p className="text-[10px] font-bold text-[#2F6A4F] uppercase tracking-wider">Doações por Mês</p>
+                </div>
+                <table className="w-full text-left border-collapse">
+                  <tbody className="divide-y divide-slate-50">
+                    {donationsByMonth.map(group => (
+                      <tr key={group.month} className="hover:bg-slate-50">
+                        <td className="px-4 py-2 text-xs font-bold text-slate-800 capitalize">{getMonthName(group.month)}</td>
+                        <td className="px-4 py-2 text-[10px] text-slate-500">{group.count} doação(ões)</td>
+                        <td className="px-4 py-2 text-xs font-bold text-[#2E7A4A] text-right">{formatCurrency(group.total)}</td>
+                      </tr>
+                    ))}
+                    <tr className="bg-slate-50">
+                      <td className="px-4 py-2 text-[10px] font-bold text-slate-800 uppercase">Total</td>
+                      <td className="px-4 py-2"></td>
+                      <td className="px-4 py-2 text-xs font-bold text-[#2E7A4A] text-right">{formatCurrency(totalDonations)}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            )}
+
             <div className="overflow-x-auto md:max-h-60 md:overflow-y-auto">
               <table className="w-full text-left border-collapse">
                 <thead className="bg-white sticky top-0 z-10 shadow-sm">

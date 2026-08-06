@@ -1,13 +1,20 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAppStore } from '../../store/useStore';
 import { Donation } from '../../types';
-import { formatCurrency, getMonthName } from '../../lib/utils';
+import { formatCurrency, generatePaymentMonth, getMonthName } from '../../lib/utils';
 import { HeartHandshake, Trash2, User } from 'lucide-react';
 
 export function Donations() {
   const { members, donations, deleteDonation } = useAppStore();
 
-  const paidDonations = donations.filter(d => d.status === 'Pago');
+  const [view, setView] = useState<'geral' | 'mes'>('geral');
+  const [selectedMonth, setSelectedMonth] = useState(generatePaymentMonth(new Date()));
+
+  const filteredDonations = donations.filter(d =>
+    view === 'mes' ? d.month === selectedMonth : true
+  );
+
+  const paidDonations = filteredDonations.filter(d => d.status === 'Pago');
   const totalPaid = paidDonations.reduce((acc, d) => acc + d.amount, 0);
 
   const grouped = members
@@ -33,6 +40,43 @@ export function Donations() {
 
   return (
     <div className="space-y-4">
+      {/* Filtro Mês atual / Geral */}
+      <div className="flex flex-wrap items-center gap-2 shrink-0">
+        <div className="flex bg-white border border-slate-200 rounded-xl p-0.5 shadow-sm">
+          <button
+            onClick={() => setView('geral')}
+            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+              view === 'geral'
+                ? 'bg-[#1A4531] text-white shadow-sm'
+                : 'text-slate-500 hover:text-[#1A4531]'
+            }`}
+          >
+            Geral
+          </button>
+          <button
+            onClick={() => setView('mes')}
+            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+              view === 'mes'
+                ? 'bg-[#1A4531] text-white shadow-sm'
+                : 'text-slate-500 hover:text-[#1A4531]'
+            }`}
+          >
+            Mês Atual
+          </button>
+        </div>
+        {view === 'mes' && (
+          <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-1.5 shadow-sm">
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Mês</label>
+            <input
+              type="month"
+              value={selectedMonth}
+              onChange={e => setSelectedMonth(e.target.value)}
+              className="text-xs font-semibold text-[#1A4531] border-none outline-none bg-transparent"
+            />
+          </div>
+        )}
+      </div>
+
       {/* Resumo */}
       <div className="grid grid-cols-2 gap-3 md:gap-4 shrink-0">
         <div className="bg-white p-3 md:p-4 rounded-2xl border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
@@ -54,6 +98,11 @@ export function Donations() {
             <HeartHandshake size={14} className="text-[#2E7A4A]" />
             Membros que Doaram ({grouped.length})
           </h3>
+          {view === 'mes' && (
+            <span className="text-[10px] font-bold text-[#2F6A4F] uppercase tracking-wider">
+              {getMonthName(selectedMonth)}
+            </span>
+          )}
         </div>
 
         <div className="divide-y divide-slate-50">
