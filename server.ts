@@ -1,6 +1,7 @@
 import express from "express";
 import { PrismaClient } from "./src/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaLibSql } from "@prisma/adapter-libsql";
 import { MercadoPagoConfig, Preference, Payment as MPPayment } from "mercadopago";
 
 // Removemos qualquer leitura de PRISMA_DATABASE_URL para forçar a usar a Neon,
@@ -14,6 +15,7 @@ const rawDatabaseUrl = process.env.POSTGRES_URL || process.env.DATABASE_URL;
 // (FUNCTION_INVOCATION_FAILED) antes de qualquer try/catch conseguir atuar.
 function sanitizeConnectionString(url: string): string {
   try {
+    if (url.startsWith("file:")) return url;
     const parsed = new URL(url);
     parsed.searchParams.delete("channel_binding");
     return parsed.toString();
@@ -23,15 +25,21 @@ function sanitizeConnectionString(url: string): string {
 }
 
 const databaseUrl = rawDatabaseUrl ? sanitizeConnectionString(rawDatabaseUrl) : undefined;
+const isLocalSqlite = databaseUrl?.startsWith("file:") ?? false;
 
 let prisma: PrismaClient | null = null;
 if (databaseUrl) {
   try {
-    const adapter = new PrismaPg({
-      connectionString: databaseUrl,
-      ssl: { rejectUnauthorized: false },
-    } as any);
-    prisma = new PrismaClient({ adapter } as any);
+    if (isLocalSqlite) {
+      const adapter = new PrismaLibSql({ url: databaseUrl } as any);
+      prisma = new PrismaClient({ adapter } as any);
+    } else {
+      const adapter = new PrismaPg({
+        connectionString: databaseUrl,
+        ssl: { rejectUnauthorized: false },
+      } as any);
+      prisma = new PrismaClient({ adapter } as any);
+    }
   } catch (e) {
     console.error("Falha ao inicializar o Prisma Client:", e);
     prisma = null;
@@ -41,6 +49,7 @@ if (databaseUrl) {
 }
 
 async function dropLegacyTables() {
+  if (isLocalSqlite) return;
   const cols: any[] = await prisma!.$queryRawUnsafe(
     `SELECT column_name FROM information_schema.columns WHERE table_name = 'Admin'`
   );
@@ -93,6 +102,7 @@ async function seed() {
 }
 
 export const app = express();
+app.use(express.json());
 
 // Health check
 app.get("/api/health", async (_req, res) => {
