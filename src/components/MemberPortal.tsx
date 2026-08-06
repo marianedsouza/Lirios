@@ -3,6 +3,7 @@ import { useAppStore } from '../store/useStore';
 import { formatCurrency, getMonthName } from '../lib/utils';
 import { LogOut, Calendar, MessageSquare, CheckCircle, Clock, AlertTriangle, BookOpen, CreditCard } from 'lucide-react';
 import { GuidelinesAccordion } from './GuidelinesAccordion';
+import { BirthdayAlert } from './Admin/BirthdayAlert';
 
 interface MemberPortalProps {
   memberId: string;
@@ -125,6 +126,9 @@ export function MemberPortal({ memberId, onLogout }: MemberPortalProps) {
             <p className="text-2xl font-bold text-[#1A4531]">{formatCurrency(member.monthlyFee)}</p>
           </div>
         </div>
+
+        {/* Aniversariantes do mês */}
+        <BirthdayAlert />
 
         {/* Aviso de pendências */}
         {pendingPayments.length > 0 && (
