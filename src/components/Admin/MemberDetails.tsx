@@ -13,7 +13,7 @@ interface MemberDetailsProps {
 }
 
 export function MemberDetails({ member, onBack }: MemberDetailsProps) {
-  const { getMemberPayments, donations, addDonation, updateDonation } = useAppStore();
+  const { getMemberPayments, donations, addDonation } = useAppStore();
   const payments = getMemberPayments(member.id);
   const memberDonations = donations.filter(d => d.memberId === member.id);
 
@@ -25,10 +25,11 @@ export function MemberDetails({ member, onBack }: MemberDetailsProps) {
   const [mpDonationLoading, setMpDonationLoading] = useState(false);
   const [mpDonationError, setMpDonationError] = useState<string | null>(null);
 
-  const currentDonation = memberDonations.find(d => d.month === donationMonth);
+  const monthPaidDonations = memberDonations.filter(d => d.month === donationMonth && d.status === 'Pago');
+  const monthDonationTotal = monthPaidDonations.reduce((acc, d) => acc + d.amount, 0);
   const monthPayment = payments.find(p => p.month === donationMonth);
   const monthlyFeeForMonth = monthPayment?.amount ?? member.monthlyFee;
-  const monthTotal = monthlyFeeForMonth + (currentDonation?.amount || 0);
+  const monthTotal = monthlyFeeForMonth + monthDonationTotal;
 
   const handleMercadoPago = async (payment: Payment) => {
     setMpLoading(payment.id!);
@@ -52,28 +53,17 @@ export function MemberDetails({ member, onBack }: MemberDetailsProps) {
     setMpDonationLoading(true);
     setMpDonationError(null);
     try {
-      let donation = currentDonation;
-      if (donation) {
-        if (donation.status !== 'Pago' && donation.amount !== amount) {
-          donation = await updateDonation(donation.id, { amount });
-        }
-      } else {
-        donation = await addDonation({
-          memberId: member.id,
-          donorName: member.name,
-          description: 'Doação',
-          amount,
-          date: new Date().toISOString().split('T')[0],
-          month: donationMonth,
-          status: 'Pendente',
-        });
-      }
-      if (donation && donation.status === 'Pendente') {
-        const { init_point } = await donationsApi.mercadopago(donation.id);
-        window.open(init_point, '_blank');
-      } else {
-        setMpDonationError('A doação deste mês já foi paga.');
-      }
+      const donation = await addDonation({
+        memberId: member.id,
+        donorName: member.name,
+        description: 'Doação',
+        amount,
+        date: new Date().toISOString().split('T')[0],
+        month: donationMonth,
+        status: 'Pendente',
+      });
+      const { init_point } = await donationsApi.mercadopago(donation.id);
+      window.open(init_point, '_blank');
     } catch (e: any) {
       setMpDonationError(e.message || 'Erro ao gerar link do Mercado Pago');
     } finally {
@@ -241,25 +231,23 @@ export function MemberDetails({ member, onBack }: MemberDetailsProps) {
           )}
 
           <div className="space-y-3">
-            {currentDonation ? (
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors">
-                <div>
-                  <p className="font-medium text-gray-900 capitalize">{getMonthName(currentDonation.month)} — Doação</p>
-                  <div className="flex items-center space-x-2 mt-1">
-                    <Badge variant={currentDonation.status === 'Pago' ? 'success' : 'warning'}>
-                      {currentDonation.status}
-                    </Badge>
-                    {currentDonation.status === 'Pago' && (
+            {monthPaidDonations.length > 0 ? (
+              monthPaidDonations.map(donation => (
+                <div key={donation.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors">
+                  <div>
+                    <p className="font-medium text-gray-900 capitalize">Doação confirmada</p>
+                    <div className="flex items-center space-x-2 mt-1">
+                      <Badge variant="success">Pago</Badge>
                       <span className="text-xs text-gray-500">
-                        paga em {currentDonation.date.split('-').reverse().join('/')}
+                        em {donation.date.split('-').reverse().join('/')}
                       </span>
-                    )}
+                    </div>
                   </div>
+                  <span className="font-semibold text-gray-900">{formatCurrency(donation.amount)}</span>
                 </div>
-                <span className="font-semibold text-gray-900">{formatCurrency(currentDonation.amount)}</span>
-              </div>
+              ))
             ) : (
-              <p className="text-sm text-gray-500">Nenhuma doação registrada para este mês.</p>
+              <p className="text-sm text-gray-500">Nenhuma doação confirmada para este mês.</p>
             )}
           </div>
 
@@ -268,7 +256,7 @@ export function MemberDetails({ member, onBack }: MemberDetailsProps) {
             <div className="text-right">
               <p className="text-xs text-gray-500">
                 Mensalidade: {formatCurrency(monthlyFeeForMonth)}
-                {currentDonation ? ` + Doação: ${formatCurrency(currentDonation.amount)}` : ''}
+                {monthDonationTotal > 0 ? ` + Doações: ${formatCurrency(monthDonationTotal)}` : ''}
               </p>
               <p className="text-xl font-bold text-gray-900">{formatCurrency(monthTotal)}</p>
             </div>

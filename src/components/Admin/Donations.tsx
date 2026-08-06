@@ -2,20 +2,18 @@ import React from 'react';
 import { useAppStore } from '../../store/useStore';
 import { Donation } from '../../types';
 import { formatCurrency, getMonthName } from '../../lib/utils';
-import { HeartHandshake, Check, Trash2, User } from 'lucide-react';
+import { HeartHandshake, Trash2, User } from 'lucide-react';
 
 export function Donations() {
-  const { members, donations, updateDonation, deleteDonation } = useAppStore();
+  const { members, donations, deleteDonation } = useAppStore();
 
   const paidDonations = donations.filter(d => d.status === 'Pago');
-  const pendingDonations = donations.filter(d => d.status === 'Pendente');
   const totalPaid = paidDonations.reduce((acc, d) => acc + d.amount, 0);
-  const totalPending = pendingDonations.reduce((acc, d) => acc + d.amount, 0);
 
   const grouped = members
     .map(member => ({
       member,
-      list: donations
+      list: paidDonations
         .filter(d => d.memberId === member.id)
         .sort((a, b) => b.month.localeCompare(a.month)),
     }))
@@ -26,11 +24,7 @@ export function Donations() {
       return bTotal - aTotal;
     });
 
-  const anonymous = donations.filter(d => !d.memberId);
-
-  const toggleStatus = async (donation: Donation) => {
-    await updateDonation(donation.id, { status: donation.status === 'Pago' ? 'Pendente' : 'Pago' });
-  };
+  const anonymous = paidDonations.filter(d => !d.memberId);
 
   const handleDelete = async (donation: Donation) => {
     if (!window.confirm(`Excluir doação de ${formatCurrency(donation.amount)} (${getMonthName(donation.month)})?`)) return;
@@ -42,14 +36,14 @@ export function Donations() {
       {/* Resumo */}
       <div className="grid grid-cols-2 gap-3 md:gap-4 shrink-0">
         <div className="bg-white p-3 md:p-4 rounded-2xl border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Doações Confirmadas</p>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Total Doado</p>
           <p className="text-xl md:text-2xl font-bold text-[#2E7A4A]">{formatCurrency(totalPaid)}</p>
           <p className="text-[10px] text-slate-400 mt-1">{paidDonations.length} doação(ões)</p>
         </div>
-        <div className="bg-white p-3 md:p-4 rounded-2xl border border-amber-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] bg-amber-50/30">
-          <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider mb-1">Pendentes</p>
-          <p className="text-xl md:text-2xl font-bold text-amber-600">{formatCurrency(totalPending)}</p>
-          <p className="text-[10px] text-slate-400 mt-1">{pendingDonations.length} pendente(s)</p>
+        <div className="bg-white p-3 md:p-4 rounded-2xl border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] bg-[#F6F9F6]">
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Doadores</p>
+          <p className="text-xl md:text-2xl font-bold text-[#1A4531]">{grouped.length + (anonymous.length > 0 ? 1 : 0)}</p>
+          <p className="text-[10px] text-slate-400 mt-1">{grouped.length} membro(s){anonymous.length > 0 ? ' + avulsos' : ''}</p>
         </div>
       </div>
 
@@ -65,7 +59,6 @@ export function Donations() {
         <div className="divide-y divide-slate-50">
           {grouped.map(({ member, list }) => {
             const total = list.reduce((acc, d) => acc + d.amount, 0);
-            const paid = list.filter(d => d.status === 'Pago').length;
             return (
               <div key={member.id} className="px-4 py-3">
                 <div className="flex items-center justify-between gap-3">
@@ -75,7 +68,7 @@ export function Donations() {
                     </div>
                     <div className="min-w-0">
                       <p className="text-xs font-bold text-slate-800 truncate">{member.name}</p>
-                      <p className="text-[10px] text-slate-400">{list.length} doação(ões) · {paid} confirmada(s)</p>
+                      <p className="text-[10px] text-slate-400">{list.length} doação(ões)</p>
                     </div>
                   </div>
                   <p className="text-sm font-bold text-[#2E7A4A] shrink-0">{formatCurrency(total)}</p>
@@ -92,18 +85,9 @@ export function Donations() {
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
                         <span className="text-xs font-bold text-slate-800">{formatCurrency(donation.amount)}</span>
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                          donation.status === 'Pago' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
-                        }`}>
-                          {donation.status.toUpperCase()}
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700">
+                          PAGO
                         </span>
-                        <button
-                          onClick={() => toggleStatus(donation)}
-                          className="text-emerald-600 hover:text-emerald-800 transition-colors"
-                          title={donation.status === 'Pago' ? 'Marcar como pendente' : 'Marcar como pago'}
-                        >
-                          <Check size={14} />
-                        </button>
                         <button
                           onClick={() => handleDelete(donation)}
                           className="text-rose-400 hover:text-rose-600 transition-colors"
@@ -146,18 +130,9 @@ export function Donations() {
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <span className="text-xs font-bold text-slate-800">{formatCurrency(donation.amount)}</span>
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                        donation.status === 'Pago' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
-                      }`}>
-                        {donation.status.toUpperCase()}
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700">
+                        PAGO
                       </span>
-                      <button
-                        onClick={() => toggleStatus(donation)}
-                        className="text-emerald-600 hover:text-emerald-800 transition-colors"
-                        title={donation.status === 'Pago' ? 'Marcar como pendente' : 'Marcar como pago'}
-                      >
-                        <Check size={14} />
-                      </button>
                       <button
                         onClick={() => handleDelete(donation)}
                         className="text-rose-400 hover:text-rose-600 transition-colors"
@@ -174,7 +149,7 @@ export function Donations() {
 
           {grouped.length === 0 && anonymous.length === 0 && (
             <div className="px-4 py-10 text-center text-xs text-slate-500">
-              Nenhuma doação registrada ainda. As doações são lançadas na página de detalhes do membro.
+              Nenhuma doação confirmada ainda. As doações são lançadas na página de detalhes do membro.
             </div>
           )}
         </div>

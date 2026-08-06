@@ -19,9 +19,7 @@ export function Dashboard() {
   const expectedAmount = currentMonthPayments.reduce((acc, curr) => acc + curr.amount, 0);
 
   const paidDonations = donations.filter(d => d.status === 'Pago');
-  const pendingDonations = donations.filter(d => d.status === 'Pendente');
   const totalDonated = paidDonations.reduce((acc, d) => acc + d.amount, 0);
-  const totalDonationsPending = pendingDonations.reduce((acc, d) => acc + d.amount, 0);
 
   const progressPercent = expectedAmount > 0 ? Math.min(100, (collectedAmount / expectedAmount) * 100) : 0;
 
@@ -88,7 +86,7 @@ export function Dashboard() {
         <div className="min-w-0">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Doações (fora da mensalidade)</p>
           <p className="text-[10px] text-slate-400 truncate">
-            {paidDonations.length} confirmada(s) · {pendingDonations.length} pendente(s)
+            {paidDonations.length} confirmada(s)
           </p>
         </div>
         <div className="text-right shrink-0">
