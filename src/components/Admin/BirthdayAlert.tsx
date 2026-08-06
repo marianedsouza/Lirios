@@ -2,29 +2,11 @@ import React, { useState } from 'react';
 import { useAppStore } from '../../store/useStore';
 import { Gift, MessageCircle, X } from 'lucide-react';
 
-const DISMISS_KEY = 'birthday_alert_dismissed';
-
-function currentMonthKey(): string {
-  const today = new Date();
-  return `${today.getFullYear()}-${today.getMonth()}`;
-}
-
 export function BirthdayAlert() {
   const { members } = useAppStore();
-  const [dismissed, setDismissed] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem(DISMISS_KEY) === currentMonthKey();
-    } catch {
-      return false;
-    }
-  });
+  const [dismissed, setDismissed] = useState<boolean>(false);
 
   const closeAlert = () => {
-    try {
-      localStorage.setItem(DISMISS_KEY, currentMonthKey());
-    } catch {
-      // storage indisponível — apenas fecha nesta sessão
-    }
     setDismissed(true);
   };
   
