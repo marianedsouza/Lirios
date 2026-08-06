@@ -243,9 +243,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const refreshPayments = useCallback(async () => {
     try {
-      const [p, r] = await Promise.all([paymentsApi.list(), receiptsApi.list()]);
+      const [p, r, d] = await Promise.all([paymentsApi.list(), receiptsApi.list(), donationsApi.list()]);
       setPayments(p as Payment[]);
       setReceipts(r as PaymentReceipt[]);
+      setDonations(d as Donation[]);
     } catch (err) {
       console.error('Failed to refresh payments:', err);
     }
