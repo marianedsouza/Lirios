@@ -13,6 +13,13 @@ function maskPhone(value: string): string {
   return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
 }
 
+function maskDate(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, 8);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+}
+
 export function MemberSignup() {
   const [step, setStep] = useState<Step>('form');
   const [errorMsg, setErrorMsg] = useState('');
@@ -35,7 +42,10 @@ export function MemberSignup() {
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.name === 'whatsapp' ? maskPhone(e.target.value) : e.target.value;
+    const value =
+      e.target.name === 'whatsapp' ? maskPhone(e.target.value) :
+      e.target.name === 'birthDate' ? maskDate(e.target.value) :
+      e.target.value;
     setForm(prev => ({ ...prev, [e.target.name]: value }));
   };
 
