@@ -63,11 +63,11 @@ export function Dashboard() {
             <div className="bg-emerald-500 h-1.5 rounded-full" style={{ width: `${progressPercent}%` }}></div>
           </div>
         </div>
-        <div className="bg-white self-start p-2 md:p-3 rounded-lg border border-amber-200/70 shadow-sm">
+        <div className="bg-white p-2 md:p-3 rounded-lg border border-amber-200/70 shadow-sm">
           <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider mb-0.5">Pendentes</p>
           <p className="text-lg md:text-2xl font-bold text-amber-600">{pendingPayments.length}</p>
         </div>
-        <div className="bg-white self-start p-2 md:p-3 rounded-lg border border-rose-200/70 shadow-sm">
+        <div className="bg-white p-2 md:p-3 rounded-lg border border-rose-200/70 shadow-sm">
           <p className="text-[10px] font-bold text-rose-600 uppercase tracking-wider mb-0.5">Atrasados</p>
           <p className="text-lg md:text-2xl font-bold text-rose-600">{delayedPayments.length}</p>
         </div>
