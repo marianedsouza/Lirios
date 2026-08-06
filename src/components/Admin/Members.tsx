@@ -8,10 +8,16 @@ import { GuidelinesAccordion } from '../GuidelinesAccordion';
 
 type FilterType = 'Todos' | 'Ativos' | 'Inativos' | 'Pendentes' | 'Dirigentes' | 'Com Atraso';
 
+const BIRTH_MONTHS = [
+  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
+];
+
 export function Members() {
   const { members, payments, settings, updateMember, deleteMember } = useAppStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState<FilterType>('Todos');
+  const [birthMonth, setBirthMonth] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<Member | undefined>(undefined);
   const [viewingMember, setViewingMember] = useState<Member | undefined>(undefined);
@@ -35,6 +41,12 @@ export function Members() {
       if (filter === 'Pendentes') return (member.status as string) === 'Pendente';
       if (filter === 'Dirigentes') return member.status === 'Dirigente';
       if (filter === 'Com Atraso') return payments.some(p => p.memberId === member.id && p.status === 'Atrasado');
+      if (birthMonth) {
+        const parts = member.birthDate?.split('/');
+        if (parts?.length !== 3) return false;
+        const month = Number(parts[1]);
+        if (!month || String(month) !== birthMonth) return false;
+      }
       return true;
     })
     .sort((a, b) => (a.status === 'Dirigente' ? 0 : 1) - (b.status === 'Dirigente' ? 0 : 1));
@@ -108,7 +120,7 @@ export function Members() {
       <div className="bg-white border border-slate-200 rounded-lg shadow-sm flex flex-col md:flex-1 md:min-h-0 overflow-hidden">
         <div className="px-4 py-3 border-b border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shrink-0">
           <h3 className="text-sm font-bold text-slate-600">Cadastro de Membros</h3>
-          <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
             <input
               type="text"
               placeholder="Pesquisar membro..."
@@ -116,6 +128,16 @@ export function Members() {
               onChange={e => setSearchTerm(e.target.value)}
               className="text-xs border border-slate-200 rounded px-3 py-1.5 w-full sm:w-48 focus:outline-emerald-500 bg-slate-50"
             />
+            <select
+              value={birthMonth}
+              onChange={e => setBirthMonth(e.target.value)}
+              className="text-xs border border-slate-200 rounded px-2 py-1.5 bg-slate-50 focus:outline-emerald-500 shrink-0"
+            >
+              <option value="">Aniversário: Todos</option>
+              {BIRTH_MONTHS.map((month, i) => (
+                <option key={month} value={i + 1}>{month}</option>
+              ))}
+            </select>
             <select
               value={filter}
               onChange={e => setFilter(e.target.value as FilterType)}
