@@ -1,4 +1,4 @@
-export type MemberStatus = 'Ativo' | 'Inativo';
+export type MemberStatus = 'Ativo' | 'Dirigente' | 'Inativo';
 export type PaymentMethod = 'PIX' | 'Dinheiro' | 'Transferência';
 export type PaymentStatus = 'Pago' | 'Pendente' | 'Atrasado';
 export type ReceiptStatus = 'Pendente' | 'Aprovado' | 'Rejeitado';

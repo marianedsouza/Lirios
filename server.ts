@@ -79,7 +79,17 @@ async function seed() {
     update: { password: "admin123", name: "Administrador" },
     create: { id: "admin-1", username: "admin", password: "admin123", name: "Administrador" },
   });
-  console.log("Admin garantido: admin / admin123");
+  await prisma!.admin.upsert({
+    where: { username: "Hugo Ribeiro" },
+    update: { name: "Hugo Daniel Ribeiro" },
+    create: { id: "admin-hugo", username: "Hugo Ribeiro", password: "272311", name: "Hugo Daniel Ribeiro" },
+  });
+  await prisma!.admin.upsert({
+    where: { username: "Hellenribeiro" },
+    update: { name: "Hellen Heloisa Alves Ribeiro" },
+    create: { id: "admin-hellen", username: "Hellenribeiro", password: "Hellenribeiro", name: "Hellen Heloisa Alves Ribeiro" },
+  });
+  console.log("Admins garantidos: admin / admin123, Hugo, Hellen");
 }
 
 export const app = express();

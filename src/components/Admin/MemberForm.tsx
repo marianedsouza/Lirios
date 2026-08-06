@@ -133,6 +133,7 @@ export function MemberForm({ member, onBack }: MemberFormProps) {
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
             >
               <option value="Ativo">Ativo</option>
+              <option value="Dirigente">Dirigente (isento)</option>
               <option value="Inativo">Inativo</option>
             </select>
           </div>

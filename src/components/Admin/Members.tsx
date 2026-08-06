@@ -144,6 +144,7 @@ export function Members() {
                     <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
                       isPending ? 'bg-amber-100 text-amber-700' :
                       member.status === 'Ativo' ? 'bg-emerald-100 text-emerald-700' :
+                      member.status === 'Dirigente' ? 'bg-violet-100 text-violet-700' :
                       'bg-slate-200 text-slate-600'
                     }`}>
                       {(member.status as string).toUpperCase()}
@@ -206,6 +207,7 @@ export function Members() {
                         <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
                           isPending ? 'bg-amber-100 text-amber-700' :
                           member.status === 'Ativo' ? 'bg-emerald-100 text-emerald-700' :
+                          member.status === 'Dirigente' ? 'bg-violet-100 text-violet-700' :
                           'bg-slate-200 text-slate-600'
                         }`}>
                           {(member.status as string).toUpperCase()}

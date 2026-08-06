@@ -62,7 +62,10 @@ export function MemberDetails({ member, onBack }: MemberDetailsProps) {
               {member.name.charAt(0).toUpperCase()}
             </div>
             <h3 className="text-lg font-bold text-gray-900">{member.name}</h3>
-            <Badge variant={member.status === 'Ativo' ? 'success' : 'default'} className="mt-2">
+            <Badge
+              variant={member.status === 'Ativo' ? 'success' : member.status === 'Dirigente' ? 'outline' : 'default'}
+              className={`mt-2 ${member.status === 'Dirigente' ? 'bg-violet-100 text-violet-700 border border-violet-200' : ''}`}
+            >
               {member.status}
             </Badge>
           </div>

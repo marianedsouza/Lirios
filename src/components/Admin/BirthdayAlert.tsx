@@ -10,7 +10,7 @@ export function BirthdayAlert() {
   const currentDay = today.getDate();
   
   const membersWithBirthdays = members
-    .filter(m => m.status === 'Ativo' && m.birthDate)
+    .filter(m => (m.status === 'Ativo' || m.status === 'Dirigente') && m.birthDate)
     .map(m => {
       const parts = m.birthDate.split('/');
       if (parts.length !== 3) return null;
