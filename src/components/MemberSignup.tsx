@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { CheckCircle, Loader2, LogIn } from 'lucide-react';
 import logo from '../../assets/logo.png';
+import fundoDesk from '../../assets/fundo-Desk.png';
+import fundoCel from '../../assets/fundo-Cel.png';
 
 type Step = 'form' | 'loading' | 'success' | 'error';
 
@@ -51,8 +53,26 @@ export function MemberSignup() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center px-4 font-sans py-12">
-      <div className="w-full max-w-lg">
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 font-sans py-12 relative overflow-hidden bg-[#F6F9F6]">
+      {/* Imagem de Fundo */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <div className="hidden md:block relative w-full h-full">
+          <img
+            src={fundoDesk}
+            alt="Fundo Desktop"
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-[#EBF2EC]/60 mix-blend-multiply"></div>
+        </div>
+        <img
+          src={fundoCel}
+          alt="Fundo Mobile"
+          className="block md:hidden w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#D6E6DB] via-[#EBF2EC]/50 to-transparent mix-blend-multiply"></div>
+      </div>
+
+      <div className="w-full max-w-lg relative z-10">
         {/* Header */}
         <div className="text-center mb-8">
           <div className="mx-auto h-20 w-20 rounded-full overflow-hidden bg-white shadow-md flex items-center justify-center mb-4">
