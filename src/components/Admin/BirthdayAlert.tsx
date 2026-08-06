@@ -32,6 +32,9 @@ export function BirthdayAlert() {
   
   const todayBirthdays = birthdayThisMonth.filter(m => m.birthdayDay === currentDay);
   const upcomingBirthdays = birthdayThisMonth.filter(m => m.birthdayDay > currentDay).slice(0, 5);
+  const pastBirthdays = birthdayThisMonth
+    .filter(m => m.birthdayDay < currentDay)
+    .sort((a, b) => b.birthdayDay - a.birthdayDay);
 
   if (birthdayThisMonth.length === 0) return null;
 
@@ -93,6 +96,35 @@ export function BirthdayAlert() {
                   <a 
                     href={formatWhatsAppLink(member.whatsapp, member.name)} 
                     target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-green-600 hover:text-green-700"
+                  >
+                    <MessageCircle size={14} />
+                  </a>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {pastBirthdays.length > 0 && (
+        <div className="bg-white rounded-lg p-3 border border-pink-200">
+          <p className="text-[10px] font-bold text-pink-600 uppercase mb-2">Já comemorados neste mês:</p>
+          <div className="space-y-1">
+            {pastBirthdays.map(member => (
+              <div key={member.id} className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="text-pink-400">🎂</span>
+                  <span className="font-medium text-slate-700">{member.name}</span>
+                  <span className="text-[10px] text-slate-400">
+                    Dia {member.birthdayDay}/{member.birthdayMonth + 1}
+                  </span>
+                </div>
+                {member.whatsapp && (
+                  <a
+                    href={formatWhatsAppLink(member.whatsapp, member.name)}
+                    target="_blank"
                     rel="noopener noreferrer"
                     className="text-green-600 hover:text-green-700"
                   >
