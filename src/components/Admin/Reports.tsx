@@ -10,8 +10,6 @@ export function Reports() {
   const [selectedMonth, setSelectedMonth] = useState(generatePaymentMonth(new Date()));
   const [reportType, setReportType] = useState<'Pago' | 'Pendente' | 'Atrasado'>('Pago');
 
-  const [donationView, setDonationView] = useState<'geral' | 'mes'>('geral');
-  const [donationMonth, setDonationMonth] = useState(generatePaymentMonth(new Date()));
   const [donationSearch, setDonationSearch] = useState('');
 
   const [monthFilter, setMonthFilter] = useState(generatePaymentMonth(new Date()));
@@ -33,15 +31,8 @@ export function Reports() {
   const totalReceived = totalCollected - totalExpenses;
 
   const paidDonations = donations.filter(d => d.status === 'Pago');
-  const donationMonths = [...new Set(paidDonations.map(d => d.month))].sort().reverse();
-  const donationsByMonth = donationMonths.map(month => {
-    const list = paidDonations.filter(d => d.month === month);
-    return {
-      month,
-      count: list.length,
-      total: list.reduce((acc, d) => acc + d.amount, 0),
-    };
-  });
+  const totalPaidDonations = paidDonations.reduce((acc, d) => acc + d.amount, 0);
+  const allMonths = [...new Set([...payments.map(p => p.month), ...paidDonations.map(d => d.month)])].sort().reverse();
   const donorName = (donation: Donation) => {
     if (donation.memberId) {
       const member = members.find(m => m.id === donation.memberId);
@@ -50,17 +41,8 @@ export function Reports() {
     return donation.donorName || 'Doador anônimo';
   };
 
-  const scopePaidDonations = donationView === 'mes'
-    ? paidDonations.filter(d => d.month === donationMonth)
-    : paidDonations;
-  const scopeDonationTotal = scopePaidDonations.reduce((acc, d) => acc + d.amount, 0);
-  const scopeMensalidadeTotal = donationView === 'mes'
-    ? payments.filter(p => p.month === donationMonth && p.status === 'Pago').reduce((acc, p) => acc + p.amount, 0)
-    : totalCollected;
-  const scopeCombinedTotal = scopeMensalidadeTotal + scopeDonationTotal;
-
   const searchTerm = donationSearch.trim().toLowerCase();
-  const searchedDonations = scopePaidDonations.filter(d =>
+  const searchedDonations = paidDonations.filter(d =>
     !searchTerm ||
     donorName(d).toLowerCase().includes(searchTerm) ||
     (d.description || '').toLowerCase().includes(searchTerm)
@@ -96,8 +78,6 @@ export function Reports() {
   const geralDoacao = (hasDateFilter ? paidDonations.filter(d => inRange(d.date)) : paidDonations)
     .reduce((a, d) => a + d.amount, 0);
   const geralTotal = geralMensalidade + geralDoacao;
-
-  const monthsWithPayments = [...new Set(payments.map(p => p.month))].sort().reverse();
 
   const handlePrint = () => {
     window.print();
@@ -265,104 +245,83 @@ export function Reports() {
             </div>
           </div>
 
-          {/* Totals by Status per Month */}
+          {/* Totais por Mês — Mensalidade | Doação | Total */}
           <div className="bg-white border border-slate-100 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.03)] flex flex-col md:min-h-0 md:flex-1 overflow-hidden">
             <div className="px-4 py-3 border-b border-slate-100 shrink-0 bg-[#F6F9F6]">
-              <h3 className="text-[12px] font-bold text-[#1A4531] uppercase tracking-wider">Totais por Mês</h3>
+              <h3 className="text-[12px] font-bold text-[#1A4531] uppercase tracking-wider">Totais por Mês · Mensalidades e Doações</h3>
             </div>
             <div className="overflow-x-auto md:flex-1 md:overflow-y-auto">
-              
+
               {/* Mobile View */}
               <div className="md:hidden divide-y divide-slate-100">
-                {monthsWithPayments.map(month => {
-                  const monthPayments = payments.filter(p => p.month === month);
-                  const mPaid = monthPayments.filter(p => p.status === 'Pago');
-                  const mPending = monthPayments.filter(p => p.status === 'Pendente');
-                  const mDelayed = monthPayments.filter(p => p.status === 'Atrasado');
+                {allMonths.map(month => {
+                  const mMen = payments.filter(p => p.month === month && p.status === 'Pago').reduce((a, c) => a + c.amount, 0);
+                  const mDon = paidDonations.filter(d => d.month === month).reduce((a, c) => a + c.amount, 0);
                   return (
-                    <div key={month} className="p-4 space-y-3">
-                      <div className="flex justify-between items-center">
+                    <div key={month} className="p-4">
+                      <div className="flex justify-between items-center mb-2">
                         <span className="text-sm font-bold text-[#1A4531] capitalize">{getMonthName(month)}</span>
-                        <span className="text-[11px] font-bold text-[#2E7A4A] bg-[#EEF4F0] px-2.5 py-1 rounded-md">
-                          {formatCurrency(mPaid.reduce((a, c) => a + c.amount, 0))}
+                        <span className="text-[11px] font-bold text-white bg-[#1A4531] px-2.5 py-1 rounded-md">
+                          {formatCurrency(mMen + mDon)}
                         </span>
                       </div>
-                      <div className="grid grid-cols-3 gap-2 text-center">
+                      <div className="grid grid-cols-2 gap-2 text-center">
                         <div className="bg-[#EEF4F0] rounded-lg p-2 border border-[#EEF4F0]">
-                          <p className="text-[9px] text-[#2F6A4F] uppercase font-bold tracking-wider mb-0.5">Pago</p>
-                          <p className="text-xs font-bold text-[#1A4531]">{mPaid.length}</p>
+                          <p className="text-[9px] text-[#2F6A4F] uppercase font-bold tracking-wider mb-0.5">Mensalidade</p>
+                          <p className="text-xs font-bold text-[#1A4531]">{formatCurrency(mMen)}</p>
                         </div>
-                        <div className="bg-amber-50 rounded-lg p-2 border border-amber-100/50">
-                          <p className="text-[9px] text-amber-600 uppercase font-bold tracking-wider mb-0.5">Pendente</p>
-                          <p className="text-xs font-bold text-amber-600">{mPending.length}</p>
+                        <div className="bg-white rounded-lg p-2 border border-emerald-100">
+                          <p className="text-[9px] text-emerald-600 uppercase font-bold tracking-wider mb-0.5">Doação</p>
+                          <p className="text-xs font-bold text-[#2E7A4A]">{formatCurrency(mDon)}</p>
                         </div>
-                        <div className="bg-rose-50 rounded-lg p-2 border border-rose-100/50">
-                          <p className="text-[9px] text-rose-600 uppercase font-bold tracking-wider mb-0.5">Atraso</p>
-                          <p className="text-xs font-bold text-rose-600">{mDelayed.length}</p>
-                        </div>
-                      </div>
-                      <div className="flex justify-between items-center pt-2 border-t border-slate-50">
-                        <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">A Receber</span>
-                        <span className="text-xs font-bold text-amber-500">
-                          {formatCurrency(mPending.reduce((a, c) => a + c.amount, 0) + mDelayed.reduce((a, c) => a + c.amount, 0))}
-                        </span>
                       </div>
                     </div>
                   );
                 })}
+                {allMonths.length === 0 && (
+                  <div className="px-4 py-8 text-center text-xs text-slate-500">Nenhum registro encontrado.</div>
+                )}
               </div>
 
               {/* Desktop View */}
-              <table className="hidden md:table w-full text-left border-collapse min-w-[600px]">
+              <table className="hidden md:table w-full text-left border-collapse min-w-[500px]">
                 <thead className="bg-white sticky top-0 z-10 shadow-sm">
                   <tr>
                     <th className="px-4 py-3 text-[10px] font-bold text-[#2F6A4F] uppercase tracking-wider border-b border-slate-100">Mês</th>
-                    <th className="px-4 py-3 text-[10px] font-bold text-[#2F6A4F] uppercase tracking-wider border-b border-slate-100 text-center">Pago</th>
-                    <th className="px-4 py-3 text-[10px] font-bold text-[#2F6A4F] uppercase tracking-wider border-b border-slate-100 text-center">Pendente</th>
-                    <th className="px-4 py-3 text-[10px] font-bold text-[#2F6A4F] uppercase tracking-wider border-b border-slate-100 text-center">Atrasado</th>
-                    <th className="px-4 py-3 text-[10px] font-bold text-[#2F6A4F] uppercase tracking-wider border-b border-slate-100 text-right">Valor Pago</th>
-                    <th className="px-4 py-3 text-[10px] font-bold text-[#2F6A4F] uppercase tracking-wider border-b border-slate-100 text-right">Valor Pendente</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-[#2F6A4F] uppercase tracking-wider border-b border-slate-100 text-right">Mensalidade</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-[#2F6A4F] uppercase tracking-wider border-b border-slate-100 text-right">Doação</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-[#2F6A4F] uppercase tracking-wider border-b border-slate-100 text-right">Total</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
-                  {monthsWithPayments.map(month => {
-                    const monthPayments = payments.filter(p => p.month === month);
-                    const mPaid = monthPayments.filter(p => p.status === 'Pago');
-                    const mPending = monthPayments.filter(p => p.status === 'Pendente');
-                    const mDelayed = monthPayments.filter(p => p.status === 'Atrasado');
+                  {allMonths.map(month => {
+                    const mMen = payments.filter(p => p.month === month && p.status === 'Pago').reduce((a, c) => a + c.amount, 0);
+                    const mDon = paidDonations.filter(d => d.month === month).reduce((a, c) => a + c.amount, 0);
                     return (
                       <tr key={month} className="hover:bg-slate-50">
                         <td className="px-4 py-2.5 text-xs font-bold text-slate-800 capitalize">{getMonthName(month)}</td>
-                        <td className="px-4 py-2.5 text-center">
-                          <span className="text-xs font-bold text-[#2E7A4A]">{mPaid.length}</span>
-                        </td>
-                        <td className="px-4 py-2.5 text-center">
-                          <span className="text-xs font-bold text-amber-500">{mPending.length}</span>
-                        </td>
-                        <td className="px-4 py-2.5 text-center">
-                          <span className="text-xs font-bold text-rose-500">{mDelayed.length}</span>
+                        <td className="px-4 py-2.5 text-right text-xs font-bold text-[#1A4531]">
+                          {formatCurrency(mMen)}
                         </td>
                         <td className="px-4 py-2.5 text-right text-xs font-bold text-[#2E7A4A]">
-                          {formatCurrency(mPaid.reduce((a, c) => a + c.amount, 0))}
+                          {formatCurrency(mDon)}
                         </td>
-                        <td className="px-4 py-2.5 text-right text-xs font-bold text-amber-500">
-                          {formatCurrency(mPending.reduce((a, c) => a + c.amount, 0) + mDelayed.reduce((a, c) => a + c.amount, 0))}
+                        <td className="px-4 py-2.5 text-right text-xs font-bold text-slate-800">
+                          {formatCurrency(mMen + mDon)}
                         </td>
                       </tr>
                     );
                   })}
-                  {monthsWithPayments.length === 0 && (
-                    <tr><td colSpan={6} className="px-4 py-8 text-center text-xs text-slate-500">Nenhum pagamento registrado.</td></tr>
+                  {allMonths.length === 0 && (
+                    <tr><td colSpan={4} className="px-4 py-8 text-center text-xs text-slate-500">Nenhum registro encontrado.</td></tr>
                   )}
                 </tbody>
                 <tfoot className="bg-[#F6F9F6] border-t border-slate-200">
                   <tr>
                     <td className="px-4 py-3 text-[11px] font-bold text-[#1A4531] uppercase tracking-wider">Total Geral</td>
-                    <td className="px-4 py-3 text-center text-xs font-bold text-[#2E7A4A]">{allPaid.length}</td>
-                    <td className="px-4 py-3 text-center text-xs font-bold text-amber-500">{allPending.length}</td>
-                    <td className="px-4 py-3 text-center text-xs font-bold text-rose-500">{allDelayed.length}</td>
-                    <td className="px-4 py-3 text-right text-xs font-bold text-[#2E7A4A]">{formatCurrency(totalCollected)}</td>
-                    <td className="px-4 py-3 text-right text-xs font-bold text-amber-500">{formatCurrency(totalPending + totalDelayed)}</td>
+                    <td className="px-4 py-3 text-right text-xs font-bold text-[#1A4531]">{formatCurrency(totalCollected)}</td>
+                    <td className="px-4 py-3 text-right text-xs font-bold text-[#2E7A4A]">{formatCurrency(totalPaidDonations)}</td>
+                    <td className="px-4 py-3 text-right text-xs font-bold text-slate-800">{formatCurrency(totalCollected + totalPaidDonations)}</td>
                   </tr>
                 </tfoot>
               </table>
@@ -412,42 +371,12 @@ export function Reports() {
                 Doações e Contribuições
               </h3>
               <span className="text-xs font-bold text-emerald-300">
-                Total: {formatCurrency(scopeCombinedTotal)}
+                Total: {formatCurrency(totalPaidDonations)}
               </span>
             </div>
 
-            {/* Filtros */}
-            <div className="px-4 py-3 border-b border-slate-100 bg-[#F6F9F6] flex flex-col sm:flex-row flex-wrap items-center gap-2">
-              <div className="flex bg-white border border-slate-200 rounded-xl p-0.5 shadow-sm">
-                <button
-                  onClick={() => setDonationView('geral')}
-                  className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-                    donationView === 'geral'
-                      ? 'bg-[#1A4531] text-white shadow-sm'
-                      : 'text-slate-500 hover:text-[#1A4531]'
-                  }`}
-                >
-                  Geral
-                </button>
-                <button
-                  onClick={() => setDonationView('mes')}
-                  className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-                    donationView === 'mes'
-                      ? 'bg-[#1A4531] text-white shadow-sm'
-                      : 'text-slate-500 hover:text-[#1A4531]'
-                  }`}
-                >
-                  Mês Atual
-                </button>
-              </div>
-              {donationView === 'mes' && (
-                <input
-                  type="month"
-                  value={donationMonth}
-                  onChange={e => setDonationMonth(e.target.value)}
-                  className="text-xs border border-slate-200 rounded-lg px-3 py-1.5 bg-white font-mono focus:outline-[#2E7A4A] focus:ring-1 focus:ring-[#2E7A4A]"
-                />
-              )}
+            {/* Pesquisa */}
+            <div className="px-4 py-3 border-b border-slate-100 bg-[#F6F9F6] flex items-center gap-2">
               <div className="flex items-center gap-2 flex-1 min-w-[180px] bg-white border border-slate-200 rounded-lg px-3 py-1.5 shadow-sm">
                 <Search size={13} className="text-slate-400 shrink-0" />
                 <input
@@ -459,30 +388,6 @@ export function Reports() {
                 />
               </div>
             </div>
-
-            {donationView === 'geral' && donationsByMonth.length > 0 && (
-              <div className="border-b border-slate-100">
-                <div className="px-4 py-2 bg-[#EEF4F0]">
-                  <p className="text-[10px] font-bold text-[#2F6A4F] uppercase tracking-wider">Doações por Mês</p>
-                </div>
-                <table className="w-full text-left border-collapse">
-                  <tbody className="divide-y divide-slate-50">
-                    {donationsByMonth.map(group => (
-                      <tr key={group.month} className="hover:bg-slate-50">
-                        <td className="px-4 py-2 text-xs font-bold text-slate-800 capitalize">{getMonthName(group.month)}</td>
-                        <td className="px-4 py-2 text-[10px] text-slate-500">{group.count} doação(ões)</td>
-                        <td className="px-4 py-2 text-xs font-bold text-[#2E7A4A] text-right">{formatCurrency(group.total)}</td>
-                      </tr>
-                    ))}
-                    <tr className="bg-slate-50">
-                      <td className="px-4 py-2 text-[10px] font-bold text-slate-800 uppercase">Total</td>
-                      <td className="px-4 py-2"></td>
-                      <td className="px-4 py-2 text-xs font-bold text-[#2E7A4A] text-right">{formatCurrency(scopeDonationTotal)}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            )}
 
             <div className="overflow-x-auto md:max-h-60 md:overflow-y-auto">
               <table className="w-full text-left border-collapse">
