@@ -14,6 +14,10 @@ export function Reports() {
   const [donationMonth, setDonationMonth] = useState(generatePaymentMonth(new Date()));
   const [donationSearch, setDonationSearch] = useState('');
 
+  const [monthFilter, setMonthFilter] = useState(generatePaymentMonth(new Date()));
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+
   const filteredPayments = view === 'mes'
     ? payments.filter(p => p.month === selectedMonth && p.status === reportType)
     : payments.filter(p => p.status === reportType);
@@ -68,6 +72,31 @@ export function Reports() {
     await deleteDonation(donation.id);
   };
 
+  // Receitas — Mensalidades e Doações
+  const monthMensalidade = payments
+    .filter(p => p.month === monthFilter && p.status === 'Pago')
+    .reduce((a, p) => a + p.amount, 0);
+  const monthDoacao = paidDonations
+    .filter(d => d.month === monthFilter)
+    .reduce((a, d) => a + d.amount, 0);
+  const monthTotal = monthMensalidade + monthDoacao;
+
+  const fromT = dateFrom ? new Date(dateFrom + 'T00:00:00').getTime() : null;
+  const toT = dateTo ? new Date(dateTo + 'T23:59:59').getTime() : null;
+  const inRange = (dateStr: string | null) => {
+    if (!dateStr) return false;
+    const t = new Date(dateStr + 'T00:00:00').getTime();
+    if (fromT !== null && t < fromT) return false;
+    if (toT !== null && t > toT) return false;
+    return true;
+  };
+  const hasDateFilter = fromT !== null || toT !== null;
+  const geralMensalidade = (hasDateFilter ? allPaid.filter(p => inRange(p.paymentDate)) : allPaid)
+    .reduce((a, p) => a + p.amount, 0);
+  const geralDoacao = (hasDateFilter ? paidDonations.filter(d => inRange(d.date)) : paidDonations)
+    .reduce((a, d) => a + d.amount, 0);
+  const geralTotal = geralMensalidade + geralDoacao;
+
   const monthsWithPayments = [...new Set(payments.map(p => p.month))].sort().reverse();
 
   const handlePrint = () => {
@@ -102,6 +131,103 @@ export function Reports() {
       {/* ─── VISÃO GERAL ─────────────────────────────────────── */}
       {view === 'geral' && (
         <>
+          {/* Receitas — Mensalidades e Doações */}
+          <div className="bg-white border border-slate-100 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.03)] overflow-hidden shrink-0">
+            <div className="px-4 py-3 border-b border-slate-100 bg-[#1A4531]">
+              <h3 className="text-[12px] font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                <DollarSign size={14} className="text-emerald-300" />
+                Receitas · Mensalidades e Doações
+              </h3>
+            </div>
+
+            {/* Filtros */}
+            <div className="px-4 py-3 border-b border-slate-100 bg-[#F6F9F6] flex flex-col sm:flex-row flex-wrap items-end gap-2 print:hidden">
+              <div className="flex items-center gap-2">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Mês</label>
+                <input
+                  type="month"
+                  value={monthFilter}
+                  onChange={e => setMonthFilter(e.target.value)}
+                  className="text-xs border border-slate-200 rounded-lg px-3 py-1.5 bg-white font-mono focus:outline-[#2E7A4A] focus:ring-1 focus:ring-[#2E7A4A]"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">De</label>
+                <input
+                  type="date"
+                  value={dateFrom}
+                  onChange={e => setDateFrom(e.target.value)}
+                  className="text-xs border border-slate-200 rounded-lg px-3 py-1.5 bg-white font-mono focus:outline-[#2E7A4A] focus:ring-1 focus:ring-[#2E7A4A]"
+                />
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Até</label>
+                <input
+                  type="date"
+                  value={dateTo}
+                  onChange={e => setDateTo(e.target.value)}
+                  className="text-xs border border-slate-200 rounded-lg px-3 py-1.5 bg-white font-mono focus:outline-[#2E7A4A] focus:ring-1 focus:ring-[#2E7A4A]"
+                />
+              </div>
+              {hasDateFilter && (
+                <button
+                  onClick={() => { setDateFrom(''); setDateTo(''); }}
+                  className="text-[10px] font-bold text-rose-500 hover:text-rose-700 uppercase"
+                >
+                  Limpar período
+                </button>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-4">
+              {/* Mês Atual */}
+              <div className="bg-[#F6F9F6] border border-slate-100 rounded-xl p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-[10px] font-bold text-[#2F6A4F] uppercase tracking-wider">Mês Atual</p>
+                  <span className="text-[10px] font-bold text-[#2F6A4F] bg-white border border-slate-200 px-2 py-0.5 rounded capitalize">
+                    {getMonthName(monthFilter)}
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="text-center min-w-0">
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Mensalidade</p>
+                    <p className="text-sm md:text-base font-bold text-[#1A4531] whitespace-nowrap tabular-nums">{formatCurrency(monthMensalidade)}</p>
+                  </div>
+                  <div className="text-center min-w-0">
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Doação</p>
+                    <p className="text-sm md:text-base font-bold text-[#2E7A4A] whitespace-nowrap tabular-nums">{formatCurrency(monthDoacao)}</p>
+                  </div>
+                  <div className="text-center min-w-0">
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Total</p>
+                    <p className="text-sm md:text-base font-bold text-slate-800 whitespace-nowrap tabular-nums">{formatCurrency(monthTotal)}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Geral */}
+              <div className="bg-[#1A4531] border border-[#23603A] rounded-xl p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-[10px] font-bold text-[#A3BCA7] uppercase tracking-wider">Geral</p>
+                  <span className="text-[10px] font-bold text-emerald-300 uppercase">
+                    {hasDateFilter ? 'Período filtrado' : 'Todo o período'}
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="text-center min-w-0">
+                    <p className="text-[9px] font-bold text-[#A3BCA7] uppercase tracking-wider mb-1">Mensalidade</p>
+                    <p className="text-sm md:text-base font-bold text-white whitespace-nowrap tabular-nums">{formatCurrency(geralMensalidade)}</p>
+                  </div>
+                  <div className="text-center min-w-0">
+                    <p className="text-[9px] font-bold text-[#A3BCA7] uppercase tracking-wider mb-1">Doação</p>
+                    <p className="text-sm md:text-base font-bold text-emerald-300 whitespace-nowrap tabular-nums">{formatCurrency(geralDoacao)}</p>
+                  </div>
+                  <div className="text-center min-w-0">
+                    <p className="text-[9px] font-bold text-[#A3BCA7] uppercase tracking-wider mb-1">Total</p>
+                    <p className="text-sm md:text-base font-bold text-white whitespace-nowrap tabular-nums">{formatCurrency(geralTotal)}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Summary Cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 shrink-0">
             <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
@@ -331,22 +457,6 @@ export function Reports() {
                   onChange={e => setDonationSearch(e.target.value)}
                   className="flex-1 text-xs border-none outline-none bg-transparent"
                 />
-              </div>
-            </div>
-
-            {/* Mensalidade | Doação | Total */}
-            <div className="grid grid-cols-3 gap-2 md:gap-3 p-3 md:p-4 border-b border-slate-100 bg-white">
-              <div className="bg-[#F6F9F6] border border-slate-100 rounded-xl px-2 py-2.5 text-center min-w-0">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Mensalidade</p>
-                <p className="text-sm md:text-lg font-bold text-[#1A4531] whitespace-nowrap tabular-nums">{formatCurrency(scopeMensalidadeTotal)}</p>
-              </div>
-              <div className="bg-[#F6F9F6] border border-slate-100 rounded-xl px-2 py-2.5 text-center min-w-0">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Doação</p>
-                <p className="text-sm md:text-lg font-bold text-[#2E7A4A] whitespace-nowrap tabular-nums">{formatCurrency(scopeDonationTotal)}</p>
-              </div>
-              <div className="bg-[#1A4531] border border-[#23603A] rounded-xl px-2 py-2.5 text-center min-w-0">
-                <p className="text-[10px] font-bold text-[#A3BCA7] uppercase tracking-wider mb-1">Total</p>
-                <p className="text-sm md:text-lg font-bold text-white whitespace-nowrap tabular-nums">{formatCurrency(scopeCombinedTotal)}</p>
               </div>
             </div>
 
