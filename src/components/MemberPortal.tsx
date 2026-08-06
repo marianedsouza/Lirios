@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../store/useStore';
+import { Payment } from '../types';
 import { formatCurrency, getMonthName, generatePaymentMonth } from '../lib/utils';
-import { LogOut, Calendar, MessageSquare, CheckCircle, Clock, AlertTriangle, BookOpen, CreditCard, HeartHandshake } from 'lucide-react';
+import { LogOut, Calendar, MessageSquare, CheckCircle, Clock, AlertTriangle, BookOpen, CreditCard, HeartHandshake, ChevronDown } from 'lucide-react';
 import { GuidelinesAccordion } from './GuidelinesAccordion';
 import { BirthdayAlert } from './Admin/BirthdayAlert';
 
@@ -107,6 +108,25 @@ export function MemberPortal({ memberId, onLogout }: MemberPortalProps) {
     .filter(d => d.memberId === memberId && d.status === 'Pago')
     .sort((a, b) => b.month.localeCompare(a.month));
 
+  const groupedByYear = payments
+    .slice()
+    .sort((a, b) => b.month.localeCompare(a.month))
+    .reduce<Record<string, Payment[]>>((acc, p) => {
+      const year = p.month.slice(0, 4);
+      (acc[year] = acc[year] || []).push(p);
+      return acc;
+    }, {});
+  const years = Object.keys(groupedByYear).sort((a, b) => b.localeCompare(a));
+
+  const [yearOverride, setYearOverride] = useState<Record<string, boolean>>({});
+  const isYearOpen = (year: string) => {
+    const hasUnpaid = groupedByYear[year].some(p => p.status !== 'Pago');
+    return year in yearOverride ? yearOverride[year] : hasUnpaid;
+  };
+  const toggleYear = (year: string) => {
+    setYearOverride(prev => ({ ...prev, [year]: !isYearOpen(year) }));
+  };
+
   return (
     <div className="min-h-screen bg-[#F6F9F6] flex flex-col font-sans text-slate-800">
       {/* Header */}
@@ -194,59 +214,87 @@ export function MemberPortal({ memberId, onLogout }: MemberPortalProps) {
           </div>
 
           <div className="divide-y divide-slate-100">
-            {payments.slice().reverse().map(payment => {
-              const receipt = getReceiptStatus(payment.id);
+            {years.map(year => {
+              const yearPayments = groupedByYear[year];
+              const unpaidCount = yearPayments.filter(p => p.status !== 'Pago').length;
+              const open = isYearOpen(year);
               return (
-                <div key={payment.id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 sm:px-6 hover:bg-slate-50 transition-colors">
-                  <div className="mb-2 sm:mb-0">
-                    <p className="font-bold text-slate-800 capitalize text-sm mb-1">{getMonthName(payment.month)}</p>
-                    <div className="flex items-center">
-                      {payment.status === 'Pago' ? (
-                        <span className="inline-flex items-center text-[10px] font-bold text-[#2F6A4F] bg-[#EEF4F0] px-2.5 py-1 rounded-md uppercase tracking-wider">
-                          <CheckCircle size={12} className="mr-1" /> PAGO EM {payment.paymentDate?.split('-').reverse().join('/')}
-                        </span>
-                      ) : payment.status === 'Atrasado' ? (
-                        <span className="inline-flex items-center text-[10px] font-bold text-rose-700 bg-rose-50 border border-rose-100 px-2.5 py-1 rounded-md uppercase tracking-wider">
-                          <AlertTriangle size={12} className="mr-1" /> ATRASADO
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-100 px-2.5 py-1 rounded-md uppercase tracking-wider">
-                          <Clock size={12} className="mr-1" /> PENDENTE
-                        </span>
-                      )}
+                <div key={year} className={open ? '' : ''}>
+                  <button
+                    onClick={() => toggleYear(year)}
+                    className="w-full flex items-center justify-between gap-3 px-4 sm:px-6 py-4 hover:bg-slate-50 transition-colors text-left"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-bold text-[#1A4531]">{year}</span>
+                      <span className={`text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider ${
+                        unpaidCount > 0 ? 'bg-amber-50 text-amber-700 border border-amber-100' : 'bg-[#EEF4F0] text-[#2F6A4F]'
+                      }`}>
+                        {unpaidCount > 0 ? `${unpaidCount} em aberto` : 'Em dia'}
+                      </span>
                     </div>
-                    {receipt && (
-                      <p className="text-[10px] text-slate-500 mt-1">
-                        Comprovante:{' '}
-                        <span className={
-                          receipt.status === 'Aprovado' ? 'text-emerald-600 font-bold' :
-                          receipt.status === 'Rejeitado' ? 'text-rose-600 font-bold' :
-                          'text-amber-600 font-bold'
-                        }>
-                          {receipt.status === 'Aprovado' ? 'Aprovado' :
-                           receipt.status === 'Rejeitado' ? 'Rejeitado' : 'Aguardando validação'}
-                        </span>
-                      </p>
-                    )}
-                  </div>
+                    <ChevronDown size={18} className={`text-slate-400 transition-transform shrink-0 ${open ? 'rotate-180' : ''}`} />
+                  </button>
 
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
-                    <span className="font-bold text-slate-800 text-sm">{formatCurrency(payment.amount)}</span>
-                    {payment.status !== 'Pago' && (
-                      <button
-                        onClick={() => handleMercadoPago(payment.id!)}
-                        disabled={mpLoading === payment.id}
-                        className="flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-[0.1em] px-4 py-2.5 bg-[#2E7A4A] hover:bg-[#23603A] text-white rounded-xl shadow-[0_4px_14px_rgba(46,122,74,0.3)] disabled:opacity-50 transition-all w-full sm:w-auto sm:min-w-[160px]"
-                      >
-                        <CreditCard size={14} />
-                        {mpLoading === payment.id ? 'Aguarde...' : 'Pagar agora'}
-                      </button>
-                    )}
-                  </div>
+                  {open && (
+                    <div className="border-t border-slate-50 divide-y divide-slate-50 bg-slate-50/30">
+                      {yearPayments.map(payment => {
+                        const receipt = getReceiptStatus(payment.id);
+                        return (
+                          <div key={payment.id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 sm:px-6 hover:bg-slate-50 transition-colors">
+                            <div className="mb-2 sm:mb-0">
+                              <p className="font-bold text-slate-800 capitalize text-sm mb-1">{getMonthName(payment.month)}</p>
+                              <div className="flex items-center">
+                                {payment.status === 'Pago' ? (
+                                  <span className="inline-flex items-center text-[10px] font-bold text-[#2F6A4F] bg-[#EEF4F0] px-2.5 py-1 rounded-md uppercase tracking-wider">
+                                    <CheckCircle size={12} className="mr-1" /> PAGO EM {payment.paymentDate?.split('-').reverse().join('/')}
+                                  </span>
+                                ) : payment.status === 'Atrasado' ? (
+                                  <span className="inline-flex items-center text-[10px] font-bold text-rose-700 bg-rose-50 border border-rose-100 px-2.5 py-1 rounded-md uppercase tracking-wider">
+                                    <AlertTriangle size={12} className="mr-1" /> ATRASADO
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-100 px-2.5 py-1 rounded-md uppercase tracking-wider">
+                                    <Clock size={12} className="mr-1" /> PENDENTE
+                                  </span>
+                                )}
+                              </div>
+                              {receipt && (
+                                <p className="text-[10px] text-slate-500 mt-1">
+                                  Comprovante:{' '}
+                                  <span className={
+                                    receipt.status === 'Aprovado' ? 'text-emerald-600 font-bold' :
+                                    receipt.status === 'Rejeitado' ? 'text-rose-600 font-bold' :
+                                    'text-amber-600 font-bold'
+                                  }>
+                                    {receipt.status === 'Aprovado' ? 'Aprovado' :
+                                     receipt.status === 'Rejeitado' ? 'Rejeitado' : 'Aguardando validação'}
+                                  </span>
+                                </p>
+                              )}
+                            </div>
+
+                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+                              <span className="font-bold text-slate-800 text-sm">{formatCurrency(payment.amount)}</span>
+                              {payment.status !== 'Pago' && (
+                                <button
+                                  onClick={() => handleMercadoPago(payment.id!)}
+                                  disabled={mpLoading === payment.id}
+                                  className="flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-[0.1em] px-4 py-2.5 bg-[#2E7A4A] hover:bg-[#23603A] text-white rounded-xl shadow-[0_4px_14px_rgba(46,122,74,0.3)] disabled:opacity-50 transition-all w-full sm:w-auto sm:min-w-[160px]"
+                                >
+                                  <CreditCard size={14} />
+                                  {mpLoading === payment.id ? 'Aguarde...' : 'Pagar agora'}
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               );
             })}
-            {payments.length === 0 && (
+            {years.length === 0 && (
               <div className="text-center py-12 text-slate-500 text-sm font-medium">
                 <p>Nenhuma mensalidade registrada até o momento.</p>
               </div>
