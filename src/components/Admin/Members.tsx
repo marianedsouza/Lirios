@@ -64,21 +64,21 @@ export function Members() {
   }
 
   return (
-    <div className="flex-1 flex flex-col h-full space-y-4 min-h-0">
+    <div className="space-y-4">
 
       {/* Barra de ações */}
       <div className="flex flex-wrap justify-between items-center gap-3 shrink-0">
         {/* Botão link de convite */}
         <button
           onClick={handleCopyInvite}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold rounded hover:bg-blue-100 transition-colors"
+          className="flex items-center gap-2 px-4 py-2.5 bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold rounded hover:bg-blue-100 transition-colors"
         >
           {copied ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
           {copied ? 'Link copiado!' : 'Copiar link de convite'}
         </button>
         <button
           onClick={() => handleOpenForm()}
-          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-xs font-bold rounded shadow hover:bg-emerald-700 transition-colors"
+          className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 text-white text-xs font-bold rounded shadow hover:bg-emerald-700 transition-colors"
         >
           <UserPlus size={14} />
           NOVO MEMBRO
@@ -101,22 +101,22 @@ export function Members() {
         </div>
       )}
 
-      {/* Tabela de membros */}
-      <div className="flex-1 bg-white border border-slate-200 rounded-lg shadow-sm flex flex-col min-h-0 overflow-hidden">
-        <div className="px-4 py-3 border-b border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
+      {/* Lista de membros */}
+      <div className="bg-white border border-slate-200 rounded-lg shadow-sm flex flex-col md:flex-1 md:min-h-0 overflow-hidden">
+        <div className="px-4 py-3 border-b border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shrink-0">
           <h3 className="text-sm font-bold text-slate-600">Cadastro de Membros</h3>
-          <div className="flex space-x-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
             <input
               type="text"
               placeholder="Pesquisar membro..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="text-xs border border-slate-200 rounded px-3 py-1 w-48 focus:outline-emerald-500 bg-slate-50"
+              className="text-xs border border-slate-200 rounded px-3 py-1.5 w-full sm:w-48 focus:outline-emerald-500 bg-slate-50"
             />
             <select
               value={filter}
               onChange={e => setFilter(e.target.value as FilterType)}
-              className="text-xs border border-slate-200 rounded px-2 py-1 bg-slate-50 focus:outline-emerald-500"
+              className="text-xs border border-slate-200 rounded px-2 py-1.5 bg-slate-50 focus:outline-emerald-500 shrink-0"
             >
               <option value="Todos">Todos os Status</option>
               <option value="Ativos">Ativos</option>
@@ -127,7 +127,58 @@ export function Members() {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto overflow-x-auto">
+        {/* Cards no mobile */}
+        <div className="md:hidden divide-y divide-slate-50">
+          {filteredMembers.map(member => {
+            const hasDelay = payments.some(p => p.memberId === member.id && p.status === 'Atrasado');
+            const isPending = (member.status as string) === 'Pendente';
+            return (
+              <div key={member.id} className="px-4 py-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-bold text-slate-800 truncate">{member.name}</p>
+                    <p className="text-[10px] text-slate-400 font-mono truncate">{member.whatsapp}</p>
+                    <p className="text-[10px] text-slate-500 mt-1">Vencimento: Dia {member.dueDate}</p>
+                  </div>
+                  <div className="flex flex-wrap justify-end gap-1 shrink-0">
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                      isPending ? 'bg-amber-100 text-amber-700' :
+                      member.status === 'Ativo' ? 'bg-emerald-100 text-emerald-700' :
+                      'bg-slate-200 text-slate-600'
+                    }`}>
+                      {(member.status as string).toUpperCase()}
+                    </span>
+                    {hasDelay && (
+                      <span className="px-2 py-0.5 bg-rose-100 text-rose-700 rounded text-[10px] font-bold">ATRASADO</span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 mt-2">
+                  {isPending ? (
+                    <button
+                      onClick={() => handleApprove(member)}
+                      className="px-2.5 py-1.5 bg-emerald-600 text-white text-[10px] font-bold rounded hover:bg-emerald-700 transition-colors"
+                    >
+                      Aprovar
+                    </button>
+                  ) : (
+                    <button onClick={() => setViewingMember(member)} className="text-emerald-600 text-[10px] font-bold underline">Detalhes</button>
+                  )}
+                  <button onClick={() => handleOpenForm(member)} className="text-emerald-600 text-[10px] font-bold underline">Editar</button>
+                  <button onClick={() => handleDelete(member)} className="text-rose-400 hover:text-rose-600 transition-colors ml-auto" title="Apagar membro">
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+          {filteredMembers.length === 0 && (
+            <div className="px-4 py-8 text-center text-xs text-slate-500">Nenhum membro encontrado.</div>
+          )}
+        </div>
+
+        {/* Tabela no desktop */}
+        <div className="hidden md:block md:flex-1 md:overflow-y-auto md:overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[600px]">
             <thead className="bg-slate-50 sticky top-0 z-10">
               <tr>

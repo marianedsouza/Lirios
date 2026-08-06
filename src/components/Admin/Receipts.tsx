@@ -30,11 +30,10 @@ export function Receipts() {
   const pendingCount = receipts.filter(r => r.status === 'Pendente').length;
 
   return (
-    <div className="flex-1 flex flex-col h-full space-y-4 min-h-0">
-      <div className="flex justify-between items-center shrink-0">
-        <div className="flex items-center gap-3">
-          <Filter size={16} className="text-slate-400" />
-          <div className="flex bg-slate-100 p-1 rounded-md">
+    <div className="space-y-4">
+      <div className="flex items-center gap-3 shrink-0 overflow-x-auto">
+        <Filter size={16} className="text-slate-400 shrink-0" />
+        <div className="flex bg-slate-100 p-1 rounded-md shrink-0">
             {(['Pendente', 'Todos', 'Aprovado', 'Rejeitado'] as const).map(tab => (
               <button
                 key={tab}
@@ -51,9 +50,8 @@ export function Receipts() {
             ))}
           </div>
         </div>
-      </div>
 
-      <div className="flex-1 bg-white border border-slate-200 rounded-lg shadow-sm flex flex-col min-h-0 overflow-hidden">
+      <div className="bg-white border border-slate-200 rounded-lg shadow-sm flex flex-col md:flex-1 md:min-h-0 overflow-hidden">
         <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between shrink-0">
           <h3 className="text-sm font-bold text-slate-600 flex items-center gap-2">
             <Bell size={14} className={pendingCount > 0 ? 'text-amber-500' : 'text-slate-400'} />
@@ -61,7 +59,7 @@ export function Receipts() {
           </h3>
         </div>
         
-        <div className="flex-1 overflow-y-auto overflow-x-auto">
+        <div className="md:flex-1 md:overflow-y-auto">
           {filteredReceipts.length === 0 ? (
             <div className="text-center py-12 text-slate-500 text-sm font-medium">
               <p>Nenhum alerta {filter !== 'Todos' ? `com status "${filter}"` : 'encontrado'}.</p>

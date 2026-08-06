@@ -62,9 +62,9 @@ export function Caixa() {
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full space-y-4 min-h-0">
+    <div className="space-y-4">
       <div className="flex justify-end shrink-0">
-        <button onClick={() => setIsAdding(true)} className="px-4 py-2 bg-emerald-600 text-white text-xs font-bold rounded shadow hover:bg-emerald-700 transition-colors flex items-center gap-2">
+        <button onClick={() => setIsAdding(true)} className="px-4 py-2.5 bg-emerald-600 text-white text-xs font-bold rounded shadow hover:bg-emerald-700 transition-colors flex items-center gap-2">
           <Plus size={14} />
           NOVA DESPESA
         </button>
@@ -85,7 +85,7 @@ export function Caixa() {
             <p className={`text-[10px] font-bold uppercase tracking-wider mb-1 ${saldoAtual >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>Saldo no Caixa</p>
             <p className={`text-xl font-bold ${saldoAtual >= 0 ? 'text-slate-800' : 'text-rose-700'}`}>{formatCurrency(saldoAtual)}</p>
           </div>
-          <Wallet size={32} className={saldoAtual >= 0 ? 'text-emerald-200' : 'text-rose-200'} />
+          <Wallet size={32} className={`hidden sm:block ${saldoAtual >= 0 ? 'text-emerald-200' : 'text-rose-200'}`} />
         </div>
       </div>
 
@@ -118,68 +118,115 @@ export function Caixa() {
 
       {/* Movimentações Mercado Pago */}
       <div className="bg-white border border-slate-200 rounded-lg shadow-sm flex flex-col overflow-hidden shrink-0">
-        <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+        <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between gap-2">
           <h3 className="text-sm font-bold text-slate-600 flex items-center gap-2">
             <ArrowUpCircle size={14} className="text-blue-500" />
-            Movimentações — Conta Hellen (Mercado Pago)
+            Movimentações — Conta Hellen
           </h3>
-          <button onClick={fetchMPTransactions} disabled={mpLoading} className="flex items-center gap-1 text-[10px] font-bold text-slate-400 hover:text-emerald-600 transition-colors disabled:opacity-50">
+          <button onClick={fetchMPTransactions} disabled={mpLoading} className="flex items-center gap-1 text-[10px] font-bold text-slate-400 hover:text-emerald-600 transition-colors disabled:opacity-50 shrink-0">
             <RefreshCw size={12} className={mpLoading ? 'animate-spin' : ''} />
             Atualizar
           </button>
         </div>
-        <div className="overflow-x-auto">
-          {mpError ? (
-            <div className="px-4 py-6 text-center text-xs text-rose-600">
-              {mpError}
-              {mpError.includes('Access Token') && (
-                <p className="text-slate-400 mt-1">Configure a variável <span className="font-mono">MERCADOPAGO_ACCESS_TOKEN</span> na Vercel.</p>
-              )}
-            </div>
-          ) : mpLoading ? (
-            <div className="px-4 py-6 text-center text-xs text-slate-400">Carregando movimentações...</div>
-          ) : mpTransactions.length === 0 ? (
-            <div className="px-4 py-6 text-center text-xs text-slate-400">Nenhuma movimentação encontrada.</div>
-          ) : (
-            <table className="w-full text-left border-collapse min-w-[500px]">
-              <thead className="bg-slate-50">
-                <tr>
-                  <th className="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase border-b border-slate-200">Data</th>
-                  <th className="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase border-b border-slate-200">Descrição</th>
-                  <th className="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase border-b border-slate-200">Status</th>
-                  <th className="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase border-b border-slate-200 text-right">Valor</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {mpTransactions.map(tx => (
-                  <tr key={tx.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-2.5 text-xs text-slate-500 font-mono">{new Date(tx.date_created).toLocaleDateString('pt-BR')}</td>
-                    <td className="px-4 py-2.5 text-xs font-bold text-slate-800">{tx.description || `Pagamento #${tx.id}`}</td>
-                    <td className="px-4 py-2.5">
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase ${tx.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : tx.status === 'pending' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>
-                        {tx.status === 'approved' ? 'Aprovado' : tx.status === 'pending' ? 'Pendente' : tx.status}
-                      </span>
-                    </td>
-                    <td className={`px-4 py-2.5 text-xs font-bold text-right ${tx.type === 'income' ? 'text-emerald-600' : 'text-rose-600'}`}>
+
+        {mpError ? (
+          <div className="px-4 py-6 text-center text-xs text-rose-600">
+            {mpError}
+            {mpError.includes('Access Token') && (
+              <p className="text-slate-400 mt-1">Configure a variável <span className="font-mono">MERCADOPAGO_ACCESS_TOKEN</span> na Vercel.</p>
+            )}
+          </div>
+        ) : mpLoading ? (
+          <div className="px-4 py-6 text-center text-xs text-slate-400">Carregando movimentações...</div>
+        ) : mpTransactions.length === 0 ? (
+          <div className="px-4 py-6 text-center text-xs text-slate-400">Nenhuma movimentação encontrada.</div>
+        ) : (
+          <>
+            {/* Cards no mobile */}
+            <div className="md:hidden divide-y divide-slate-50">
+              {mpTransactions.map(tx => (
+                <div key={tx.id} className="px-4 py-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-xs font-bold text-slate-800 min-w-0 truncate">{tx.description || `Pagamento #${tx.id}`}</p>
+                    <span className={`text-xs font-bold text-right shrink-0 ${tx.type === 'income' ? 'text-emerald-600' : 'text-rose-600'}`}>
                       {tx.type === 'income' ? '+' : '-'}{formatCurrency(Math.abs(tx.amount))}
-                    </td>
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 mt-1.5 text-[10px] text-slate-500">
+                    <span className="font-mono">{new Date(tx.date_created).toLocaleDateString('pt-BR')}</span>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase ${tx.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : tx.status === 'pending' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>
+                      {tx.status === 'approved' ? 'Aprovado' : tx.status === 'pending' ? 'Pendente' : tx.status}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Tabela no desktop */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left border-collapse min-w-[500px]">
+                <thead className="bg-slate-50">
+                  <tr>
+                    <th className="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase border-b border-slate-200">Data</th>
+                    <th className="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase border-b border-slate-200">Descrição</th>
+                    <th className="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase border-b border-slate-200">Status</th>
+                    <th className="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase border-b border-slate-200 text-right">Valor</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {mpTransactions.map(tx => (
+                    <tr key={tx.id} className="hover:bg-slate-50">
+                      <td className="px-4 py-2.5 text-xs text-slate-500 font-mono">{new Date(tx.date_created).toLocaleDateString('pt-BR')}</td>
+                      <td className="px-4 py-2.5 text-xs font-bold text-slate-800">{tx.description || `Pagamento #${tx.id}`}</td>
+                      <td className="px-4 py-2.5">
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase ${tx.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : tx.status === 'pending' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>
+                          {tx.status === 'approved' ? 'Aprovado' : tx.status === 'pending' ? 'Pendente' : tx.status}
+                        </span>
+                      </td>
+                      <td className={`px-4 py-2.5 text-xs font-bold text-right ${tx.type === 'income' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                        {tx.type === 'income' ? '+' : '-'}{formatCurrency(Math.abs(tx.amount))}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Histórico de Despesas */}
-      <div className="flex-1 bg-white border border-slate-200 rounded-lg shadow-sm flex flex-col min-h-0 overflow-hidden">
+      <div className="bg-white border border-slate-200 rounded-lg shadow-sm flex flex-col overflow-hidden">
         <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between shrink-0">
           <h3 className="text-sm font-bold text-slate-600 flex items-center gap-2">
             <ArrowDownCircle size={14} className="text-rose-500" />
             Histórico de Despesas
           </h3>
         </div>
-        <div className="flex-1 overflow-y-auto overflow-x-auto">
+
+        {/* Cards no mobile */}
+        <div className="md:hidden divide-y divide-slate-50">
+          {expenses.slice().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(expense => (
+            <div key={expense.id} className="px-4 py-3 flex items-center justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-bold text-slate-800 truncate">{expense.description}</p>
+                <p className="text-[10px] text-slate-500 font-mono mt-0.5">{expense.date.split('-').reverse().join('/')}</p>
+              </div>
+              <div className="flex items-center gap-3 shrink-0">
+                <span className="text-xs font-bold text-rose-600">-{formatCurrency(expense.amount)}</span>
+                <button onClick={() => { if (window.confirm('Excluir esta despesa?')) deleteExpense(expense.id); }} className="text-slate-400 hover:text-rose-500 transition-colors p-1" title="Excluir">
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            </div>
+          ))}
+          {expenses.length === 0 && (
+            <div className="px-4 py-8 text-center text-xs text-slate-500">Nenhuma despesa registrada.</div>
+          )}
+        </div>
+
+        {/* Tabela no desktop */}
+        <div className="hidden md:block md:max-h-[360px] md:overflow-y-auto md:overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[500px]">
             <thead className="bg-slate-50 sticky top-0 z-10">
               <tr>

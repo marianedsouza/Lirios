@@ -94,11 +94,11 @@ export function Reports() {
           </div>
 
           {/* Totals by Status per Month */}
-          <div className="bg-white border border-slate-200 rounded-lg shadow-sm flex flex-col min-h-0 overflow-hidden flex-1">
+          <div className="bg-white border border-slate-200 rounded-lg shadow-sm flex flex-col md:min-h-0 md:flex-1 overflow-hidden">
             <div className="px-4 py-3 border-b border-slate-100 shrink-0">
               <h3 className="text-sm font-bold text-slate-600">Totais por Mês</h3>
             </div>
-            <div className="flex-1 overflow-y-auto overflow-x-auto">
+            <div className="overflow-x-auto md:flex-1 md:overflow-y-auto">
               <table className="w-full text-left border-collapse min-w-[600px]">
                 <thead className="bg-slate-50 sticky top-0 z-10">
                   <tr>
@@ -161,7 +161,7 @@ export function Reports() {
               <div className="px-4 py-3 border-b border-slate-100">
                 <h3 className="text-sm font-bold text-slate-600">Despesas ({expenses.length})</h3>
               </div>
-              <div className="overflow-y-auto max-h-60">
+              <div className="overflow-x-auto md:max-h-60 md:overflow-y-auto">
                 <table className="w-full text-left border-collapse">
                   <thead className="bg-slate-50 sticky top-0 z-10">
                     <tr>
@@ -195,7 +195,7 @@ export function Reports() {
       {/* ─── POR MÊS ─────────────────────────────────────────── */}
       {view === 'mes' && (
         <>
-          <div className="flex-1 bg-white border border-slate-200 rounded-lg shadow-sm flex flex-col min-h-0 overflow-hidden print:shadow-none print:border-none">
+          <div className="bg-white border border-slate-200 rounded-lg shadow-sm flex flex-col md:flex-1 md:min-h-0 overflow-hidden print:shadow-none print:border-none">
             
             <div className="px-4 py-3 border-b border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0 print:hidden">
               <div className="flex items-center gap-4">
@@ -244,7 +244,7 @@ export function Reports() {
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto overflow-x-auto">
+            <div className="overflow-x-auto md:flex-1 md:overflow-y-auto">
               <table className="w-full text-left border-collapse min-w-[600px]">
                 <thead className="bg-slate-50 sticky top-0 z-10 print:static">
                   <tr>

@@ -59,7 +59,7 @@ export function Settings() {
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full space-y-6 min-h-0 overflow-y-auto">
+    <div className="space-y-6">
       <form onSubmit={handleSave} className="space-y-6">
 
         {/* Mensalidade e Vencimento */}

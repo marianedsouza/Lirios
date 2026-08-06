@@ -71,7 +71,7 @@ export function MemberPortal({ memberId, onLogout }: MemberPortalProps) {
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-800">
       {/* Header */}
       <header className="h-16 bg-emerald-900 text-white shadow-md z-10 shrink-0">
-        <div className="max-w-4xl mx-auto px-6 h-full flex justify-between items-center">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 h-full flex justify-between items-center">
           <div>
             <h1 className="text-xl font-bold tracking-tight">Lírios do Pântano</h1>
             <p className="text-emerald-300 text-[10px] uppercase tracking-widest font-bold mt-0.5">Portal do Membro</p>
@@ -86,7 +86,7 @@ export function MemberPortal({ memberId, onLogout }: MemberPortalProps) {
         </div>
       </header>
 
-      <main className="flex-1 w-full max-w-4xl mx-auto px-6 py-8 space-y-6">
+      <main className="flex-1 w-full max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
 
         {/* Erro Mercado Pago */}
         {mpError && (
@@ -109,7 +109,7 @@ export function MemberPortal({ memberId, onLogout }: MemberPortalProps) {
         )}
 
         {/* Welcome Card */}
-        <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 flex flex-col md:flex-row gap-6 items-start md:items-center">
+        <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-4 sm:p-6 flex flex-col md:flex-row gap-4 sm:gap-6 items-start md:items-center">
           <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-800 text-2xl font-bold shrink-0">
             {member.name.charAt(0).toUpperCase()}
           </div>
@@ -187,13 +187,13 @@ export function MemberPortal({ memberId, onLogout }: MemberPortalProps) {
                     )}
                   </div>
 
-                  <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3 w-full sm:w-auto">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
                     <span className="font-bold text-slate-800 text-sm">{formatCurrency(payment.amount)}</span>
                     {payment.status !== 'Pago' && (
                       <button
                         onClick={() => handleMercadoPago(payment.id!)}
                         disabled={mpLoading === payment.id}
-                        className="flex items-center gap-2 text-[11px] font-bold uppercase px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors min-w-[160px] justify-center"
+                        className="flex items-center justify-center gap-2 text-[11px] font-bold uppercase px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors w-full sm:w-auto sm:min-w-[160px]"
                       >
                         <CreditCard size={14} />
                         {mpLoading === payment.id ? 'Aguarde...' : 'Pagar agora'}

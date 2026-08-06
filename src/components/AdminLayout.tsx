@@ -48,26 +48,56 @@ export function AdminLayout({ onLogout }: AdminLayoutProps) {
   };
 
   return (
-    <div className="flex h-screen w-full bg-slate-50 font-sans text-slate-800 overflow-hidden">
-      {/* Mobile header */}
-      <div className="md:hidden bg-emerald-900 text-emerald-50 p-4 flex justify-between items-center shadow-md z-20 absolute w-full">
-        <h1 className="text-xl font-bold tracking-tight text-white">Lírios do Pântano</h1>
-        <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-1">
+    <div className="flex flex-col md:flex-row h-screen h-dvh w-full bg-slate-50 font-sans text-slate-800 overflow-hidden">
+      {/* Mobile header (in-flow) */}
+      <div className="md:hidden bg-emerald-900 text-emerald-50 px-4 flex justify-between items-center h-14 shadow-md shrink-0">
+        <div className="min-w-0">
+          <h1 className="text-lg font-bold tracking-tight text-white truncate">Lírios do Pântano</h1>
+          <p className="text-[9px] text-emerald-300 uppercase tracking-widest font-bold truncate">{getTitle()}</p>
+        </div>
+        <button
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          className="p-2 -mr-2 text-emerald-100 active:bg-emerald-800 rounded transition-colors"
+          aria-label={mobileMenuOpen ? 'Fechar menu' : 'Abrir menu'}
+        >
           {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
       </div>
 
-      {/* Sidebar */}
-      <aside className={cn(
-        "fixed md:static inset-y-0 left-0 bg-emerald-900 text-emerald-50 w-64 flex flex-col transition-transform duration-300 ease-in-out z-10 shrink-0",
-        mobileMenuOpen ? "translate-x-0 pt-16 md:pt-0" : "-translate-x-full md:translate-x-0"
-      )}>
+      {/* Backdrop para fechar o menu no mobile */}
+      {mobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Sidebar (drawer overlay no mobile, fixa no desktop) */}
+      <aside
+        className={cn(
+          "fixed md:static inset-y-0 left-0 bg-emerald-900 text-emerald-50 w-64 flex flex-col transition-transform duration-300 ease-in-out z-50 shrink-0",
+          mobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+        )}
+      >
+        {/* Cabeçalho do drawer no mobile */}
+        <div className="md:hidden flex items-center justify-between px-4 h-14 border-b border-emerald-800 shrink-0">
+          <span className="text-sm font-bold text-white">Menu</span>
+          <button
+            onClick={() => setMobileMenuOpen(false)}
+            className="p-2 -mr-2 text-emerald-300 active:bg-emerald-800 rounded transition-colors"
+            aria-label="Fechar menu"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
         <div className="p-6 hidden md:block">
           <h1 className="text-xl font-bold tracking-tight text-white">Lírios do Pântano</h1>
           <p className="text-xs text-emerald-300 uppercase tracking-widest mt-1">Gestão de Mensalidades</p>
         </div>
-        
-        <nav className="flex-1 px-4 py-8 md:py-4 space-y-1">
+
+        <nav className="flex-1 px-4 py-6 md:py-4 space-y-1 overflow-y-auto">
           {navigation.map((item) => {
             const Icon = item.icon;
             return (
@@ -78,16 +108,16 @@ export function AdminLayout({ onLogout }: AdminLayoutProps) {
                   setMobileMenuOpen(false);
                 }}
                 className={cn(
-                  "w-full flex items-center space-x-3 px-3 py-2 rounded-md transition-colors",
-                  activeTab === item.id 
-                    ? "bg-emerald-800 text-white" 
+                  "w-full flex items-center space-x-3 px-3 py-3 md:py-2 rounded-md transition-colors",
+                  activeTab === item.id
+                    ? "bg-emerald-800 text-white"
                     : "hover:bg-emerald-800 text-emerald-200"
                 )}
               >
                 <Icon size={20} />
                 <span className="text-sm font-medium flex-1 text-left">{item.name}</span>
               </button>
-            )
+            );
           })}
         </nav>
 
@@ -108,12 +138,11 @@ export function AdminLayout({ onLogout }: AdminLayoutProps) {
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col overflow-hidden pt-16 md:pt-0 min-w-0">
-        {/* Top Header */}
-        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 shadow-sm z-10 shrink-0">
+      <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Top Header (desktop) */}
+        <header className="hidden md:flex h-16 bg-white border-b border-slate-200 items-center justify-between px-8 shadow-sm shrink-0">
           <h2 className="text-lg font-semibold text-slate-700 italic">{getTitle()}</h2>
-          {/* Conta de Recebimento — dados fixos da conta Mercado Pago da Hellen */}
-          <div className="hidden sm:flex items-center gap-3 bg-blue-50 border border-blue-100 rounded-lg px-4 py-1.5">
+          <div className="flex items-center gap-3 bg-blue-50 border border-blue-100 rounded-lg px-4 py-1.5">
             <div className="text-right">
               <p className="text-[9px] font-bold text-blue-500 uppercase tracking-widest">Conta de Recebimento</p>
               <p className="text-xs font-bold text-slate-800">Hellen · Mercado Pago</p>
@@ -122,13 +151,15 @@ export function AdminLayout({ onLogout }: AdminLayoutProps) {
           </div>
         </header>
 
-        {/* Content Scrollable Area */}
-        <div className="flex-1 p-6 space-y-6 overflow-y-auto overflow-x-hidden flex flex-col">
-           {renderContent()}
+        {/* Content Scrollable Area — scroll único da página */}
+        <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6">
+          <div className="max-w-7xl mx-auto space-y-4 md:space-y-6">
+            {renderContent()}
+          </div>
         </div>
 
-        {/* Bottom System Status Footer */}
-        <footer className="h-8 bg-slate-100 border-t border-slate-200 px-6 flex items-center justify-between text-[10px] text-slate-400 shrink-0">
+        {/* Bottom System Status Footer (desktop) */}
+        <footer className="hidden md:flex h-8 bg-slate-100 border-t border-slate-200 px-6 items-center justify-between text-[10px] text-slate-400 shrink-0">
           <div className="flex space-x-4">
             <span>v1.0.0-stable</span>
             <span>ID Centro: LP-2023</span>

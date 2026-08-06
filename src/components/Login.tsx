@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Users, Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import { authApi } from '../lib/api';
+import logo from '../../assets/logo.png';
 
 interface LoginProps {
   onLogin: (role: 'admin' | 'member', memberId?: string) => void;
@@ -38,8 +39,8 @@ export function Login({ onLogin }: LoginProps) {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <div className="mx-auto h-16 w-16 bg-emerald-900 rounded-full flex items-center justify-center text-emerald-50 shadow-md">
-          <Users size={32} />
+        <div className="mx-auto h-20 w-20 rounded-full overflow-hidden bg-white shadow-md flex items-center justify-center">
+          <img src={logo} alt="Logo Lírios do Pântano" className="h-full w-full object-cover" />
         </div>
         <h2 className="mt-6 text-2xl font-bold text-slate-800 tracking-tight">Lírios do Pântano</h2>
         <p className="mt-1 text-[10px] text-emerald-600 font-bold uppercase tracking-widest">Controle de Mensalidades</p>

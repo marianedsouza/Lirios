@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { CheckCircle, Loader2, Users } from 'lucide-react';
+import { CheckCircle, Loader2 } from 'lucide-react';
+import logo from '../../assets/logo.png';
 
 type Step = 'form' | 'loading' | 'success' | 'error';
 
@@ -45,8 +46,8 @@ export function MemberSignup() {
       <div className="w-full max-w-lg">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="mx-auto h-16 w-16 bg-emerald-900 rounded-full flex items-center justify-center text-emerald-50 shadow-md mb-4">
-            <Users size={32} />
+          <div className="mx-auto h-20 w-20 rounded-full overflow-hidden bg-white shadow-md flex items-center justify-center mb-4">
+            <img src={logo} alt="Logo Lírios do Pântano" className="h-full w-full object-cover" />
           </div>
           <h1 className="text-2xl font-bold text-slate-800">Lírios do Pântano</h1>
           <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest mt-1">Formulário de Inscrição</p>

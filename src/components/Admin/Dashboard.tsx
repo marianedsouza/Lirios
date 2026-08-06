@@ -20,6 +20,23 @@ export function Dashboard() {
 
   const progressPercent = expectedAmount > 0 ? Math.min(100, (collectedAmount / expectedAmount) * 100) : 0;
 
+  const sortedPayments = currentMonthPayments.slice().sort((a, b) => {
+    const sA = a.status === 'Atrasado' ? 0 : a.status === 'Pendente' ? 1 : 2;
+    const sB = b.status === 'Atrasado' ? 0 : b.status === 'Pendente' ? 1 : 2;
+    return sA - sB;
+  });
+
+  const paymentDateLabel = (payment: any, member: any) =>
+    payment.paymentDate
+      ? payment.paymentDate.split('-').reverse().join('/')
+      : `${member.dueDate}/${currentMonth.split('-')[1]}/${currentMonth.split('-')[0]}`;
+
+  const statusBadge = (status: string) => {
+    if (status === 'Pago') return <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded text-[10px] font-bold">PAGO</span>;
+    if (status === 'Pendente') return <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded text-[10px] font-bold">PENDENTE</span>;
+    return <span className="px-2 py-0.5 bg-rose-100 text-rose-700 rounded text-[10px] font-bold">ATRASADO</span>;
+  };
+
   return (
     <>
       {/* Birthday Alert */}
@@ -33,40 +50,67 @@ export function Dashboard() {
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 shrink-0">
-        <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-2 md:gap-4 shrink-0">
+        <div className="bg-white p-3 md:p-4 rounded-lg border border-slate-200 shadow-sm">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Total Membros</p>
-          <p className="text-2xl font-bold text-slate-800">{members.length}</p>
+          <p className="text-xl md:text-2xl font-bold text-slate-800">{members.length}</p>
           <p className="text-[10px] text-emerald-600 mt-1 font-medium">● {activeMembers} Ativos</p>
         </div>
-        <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
+        <div className="bg-white p-3 md:p-4 rounded-lg border border-slate-200 shadow-sm">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Pagos</p>
-          <p className="text-2xl font-bold text-emerald-600">{paidPayments.length}</p>
+          <p className="text-xl md:text-2xl font-bold text-emerald-600">{paidPayments.length}</p>
           <div className="w-full bg-slate-100 h-1.5 mt-2 rounded-full">
             <div className="bg-emerald-500 h-1.5 rounded-full" style={{ width: `${progressPercent}%` }}></div>
           </div>
         </div>
-        <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Pendentes</p>
-          <p className="text-2xl font-bold text-amber-500">{pendingPayments.length}</p>
-          <p className="text-[10px] text-slate-400 mt-1">Aguardando vencimento</p>
+        <div className="bg-white self-start p-2 md:p-3 rounded-lg border border-amber-200/70 shadow-sm">
+          <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider mb-0.5">Pendentes</p>
+          <p className="text-lg md:text-2xl font-bold text-amber-600">{pendingPayments.length}</p>
         </div>
-        <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Atrasados</p>
-          <p className="text-2xl font-bold text-rose-500">{delayedPayments.length}</p>
-          <p className="text-[10px] text-rose-400 mt-1 font-bold italic underline">Ação necessária</p>
+        <div className="bg-white self-start p-2 md:p-3 rounded-lg border border-rose-200/70 shadow-sm">
+          <p className="text-[10px] font-bold text-rose-600 uppercase tracking-wider mb-0.5">Atrasados</p>
+          <p className="text-lg md:text-2xl font-bold text-rose-600">{delayedPayments.length}</p>
         </div>
-        <div className="bg-white p-4 rounded-lg border border-emerald-100 shadow-sm bg-emerald-50/30">
-          <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider mb-1">Arrecadado</p>
-          <p className="text-2xl font-bold text-slate-800">{formatCurrency(collectedAmount)}</p>
-          <p className="text-[10px] text-slate-400 mt-1 italic">Meta: {formatCurrency(expectedAmount)}</p>
+        <div className="col-span-2 lg:col-span-1 bg-emerald-600 p-3 md:p-4 rounded-lg border border-emerald-700 shadow-sm">
+          <p className="text-[10px] font-bold text-emerald-100 uppercase tracking-wider mb-1">Arrecadado</p>
+          <p className="text-xl md:text-2xl font-bold text-white">{formatCurrency(collectedAmount)}</p>
         </div>
       </div>
 
       {/* Main Data Grid */}
-      <div className="flex-1 flex flex-col lg:flex-row gap-6 min-h-0">
-        {/* Member/Payment List (70%) */}
-        <div className="lg:w-2/3 bg-white border border-slate-200 rounded-lg shadow-sm flex flex-col min-h-[300px] overflow-hidden">
+      <div className="flex-1 flex flex-col lg:flex-row gap-4 md:gap-6 min-h-0">
+
+        {/* Monitor de Pagamentos — cards no mobile */}
+        <div className="lg:hidden bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
+          <div className="px-4 py-3 border-b border-slate-100">
+            <h3 className="text-sm font-bold text-slate-600">Monitor de Pagamentos Recentes</h3>
+          </div>
+          <div className="divide-y divide-slate-50">
+            {sortedPayments.map(payment => {
+              const member = members.find(m => m.id === payment.memberId);
+              if (!member) return null;
+              return (
+                <div key={payment.id} className="px-4 py-3 flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-slate-800 truncate">{member.name}</p>
+                    <p className="text-[10px] text-slate-400 font-mono truncate">{member.whatsapp}</p>
+                    <p className="text-[10px] text-slate-500 font-mono mt-1">{paymentDateLabel(payment, member)}</p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-xs font-bold text-slate-800 mb-1">{formatCurrency(payment.amount)}</p>
+                    {statusBadge(payment.status)}
+                  </div>
+                </div>
+              );
+            })}
+            {sortedPayments.length === 0 && (
+              <div className="px-4 py-8 text-center text-xs text-slate-500">Nenhum pagamento registrado.</div>
+            )}
+          </div>
+        </div>
+
+        {/* Member/Payment List (70%) — tabela no desktop */}
+        <div className="hidden lg:flex lg:w-2/3 bg-white border border-slate-200 rounded-lg shadow-sm flex-col min-h-[300px] overflow-hidden">
           <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between shrink-0">
             <h3 className="text-sm font-bold text-slate-600">Monitor de Pagamentos Recentes</h3>
           </div>
@@ -81,14 +125,10 @@ export function Dashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {currentMonthPayments.slice().sort((a,b) => {
-                  const sA = a.status === 'Atrasado' ? 0 : a.status === 'Pendente' ? 1 : 2;
-                  const sB = b.status === 'Atrasado' ? 0 : b.status === 'Pendente' ? 1 : 2;
-                  return sA - sB;
-                }).map(payment => {
+                {sortedPayments.map(payment => {
                   const member = members.find(m => m.id === payment.memberId);
                   if (!member) return null;
-                  
+
                   const isAtrasado = payment.status === 'Atrasado';
                   return (
                     <tr key={payment.id} className={`hover:bg-slate-50 ${isAtrasado ? 'bg-rose-50/20' : ''}`}>
@@ -97,18 +137,14 @@ export function Dashboard() {
                         <div className="text-[10px] text-slate-400 font-mono">{member.whatsapp}</div>
                       </td>
                       <td className="px-4 py-2.5 text-xs text-slate-500 font-mono">
-                        {payment.paymentDate ? payment.paymentDate.split('-').reverse().join('/') : `${member.dueDate}/${currentMonth.split('-')[1]}/${currentMonth.split('-')[0]}`}
+                        {paymentDateLabel(payment, member)}
                       </td>
                       <td className="px-4 py-2.5 text-xs font-bold text-slate-800">{formatCurrency(payment.amount)}</td>
-                      <td className="px-4 py-2.5">
-                        {payment.status === 'Pago' && <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded text-[10px] font-bold">PAGO</span>}
-                        {payment.status === 'Pendente' && <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded text-[10px] font-bold">PENDENTE</span>}
-                        {payment.status === 'Atrasado' && <span className="px-2 py-0.5 bg-rose-100 text-rose-700 rounded text-[10px] font-bold">ATRASADO</span>}
-                      </td>
+                      <td className="px-4 py-2.5">{statusBadge(payment.status)}</td>
                     </tr>
-                  )
+                  );
                 })}
-                {currentMonthPayments.length === 0 && (
+                {sortedPayments.length === 0 && (
                   <tr><td colSpan={4} className="px-4 py-8 text-center text-xs text-slate-500">Nenhum pagamento registrado.</td></tr>
                 )}
               </tbody>

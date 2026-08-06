@@ -97,29 +97,67 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const generateMonthlyPayments = useCallback(async () => {
     const currentMonth = generatePaymentMonth(new Date());
     const today = new Date();
+    const [curYear, curMonth] = currentMonth.split('-').map(Number);
+
+    // Lista de meses (YYYY-MM) entre "from" e o mês atual, inclusive.
+    const monthList = (from: string): string[] => {
+      const list: string[] = [];
+      const [fy, fm] = from.split('-').map(Number);
+      let y = fy, m = fm;
+      while (y < curYear || (y === curYear && m <= curMonth)) {
+        list.push(`${y}-${String(m).padStart(2, '0')}`);
+        m++;
+        if (m > 12) { m = 1; y++; }
+      }
+      return list;
+    };
 
     const newPayments: Payment[] = [];
     const updates: { id: string; status: string }[] = [];
 
     members.filter(m => m.status === 'Ativo').forEach(member => {
-      const existingPayment = payments.find(p => p.memberId === member.id && p.month === currentMonth);
-      if (!existingPayment) {
+      const memberMonths = payments
+        .filter(p => p.memberId === member.id)
+        .map(p => p.month);
+
+      // Mês inicial das cobranças: depois do último mês já gerado,
+      // senão a partir da data de entrada, senão o mês atual.
+      let startMonth = currentMonth;
+      if (memberMonths.length > 0) {
+        const lastMonth = memberMonths.slice().sort().pop()!;
+        const [ly, lm] = lastMonth.split('-').map(Number);
+        startMonth = lm === 12 ? `${ly + 1}-01` : `${ly}-${String(lm + 1).padStart(2, '0')}`;
+      } else if (member.entryDate) {
+        const parsed = new Date(member.entryDate.includes('T') ? member.entryDate : `${member.entryDate}T00:00:00`);
+        if (!isNaN(parsed.getTime())) {
+          startMonth = generatePaymentMonth(parsed);
+        }
+      }
+
+      monthList(startMonth).forEach(month => {
+        const existing = payments.find(p => p.memberId === member.id && p.month === month);
+        if (existing) {
+          // Marca como atrasado quando o vencimento do mês atual já passou
+          if (existing.status === 'Pendente' && month === currentMonth && today.getDate() > member.dueDate) {
+            updates.push({ id: existing.id, status: 'Atrasado' });
+          }
+          return;
+        }
+
         let status: PaymentStatus = 'Pendente';
-        if (today.getDate() > member.dueDate) {
+        if (month < currentMonth || (month === currentMonth && today.getDate() > member.dueDate)) {
           status = 'Atrasado';
         }
         newPayments.push({
           id: crypto.randomUUID(),
           memberId: member.id,
-          month: currentMonth,
+          month,
           paymentDate: null,
           amount: member.monthlyFee,
           method: null,
           status,
         });
-      } else if (existingPayment.status === 'Pendente' && today.getDate() > member.dueDate) {
-        updates.push({ id: existingPayment.id, status: 'Atrasado' });
-      }
+      });
     });
 
     // Persist new payments
