@@ -165,7 +165,7 @@ export function Dashboard() {
                 <div className="text-right shrink-0">
                   <p className="text-xs font-bold text-slate-800 mb-1">{formatCurrency(row.amount)}</p>
                   <div className="flex items-center justify-end gap-1.5">
-                    {statusBadge(row.status)}
+                    {row.kind !== 'doacao' && statusBadge(row.status)}
                     {row.kind === 'doacao' && (
                       <span className="px-1.5 py-0.5 bg-[#1A4531] text-emerald-200 rounded text-[9px] font-bold uppercase tracking-wider">Doação</span>
                     )}
@@ -224,7 +224,7 @@ export function Dashboard() {
                       <td className="px-4 py-2.5 text-xs font-bold text-slate-800">{formatCurrency(row.amount)}</td>
                       <td className="px-4 py-2.5">
                         <div className="flex items-center gap-1.5">
-                          {statusBadge(row.status)}
+                          {row.kind !== 'doacao' && statusBadge(row.status)}
                           {row.kind === 'doacao' && (
                             <span className="px-2 py-0.5 bg-[#1A4531] text-emerald-200 rounded text-[10px] font-bold uppercase tracking-wider">Doação</span>
                           )}
