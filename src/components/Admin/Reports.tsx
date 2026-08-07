@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAppStore } from '../../store/useStore';
 import { Donation } from '../../types';
 import { generatePaymentMonth, formatCurrency, getMonthName } from '../../lib/utils';
-import { Printer, Users, CheckCircle, Clock, AlertTriangle, DollarSign, HeartHandshake, Trash2, Search } from 'lucide-react';
+import { Printer, Users, CheckCircle, Clock, AlertTriangle, DollarSign, HeartHandshake, Trash2, Search, TrendingDown, ListChecks, ChevronDown } from 'lucide-react';
 
 export function Reports() {
   const { members, payments, expenses, donations, deleteDonation } = useAppStore();
@@ -12,9 +12,10 @@ export function Reports() {
 
   const [donationSearch, setDonationSearch] = useState('');
 
-  const [monthFilter, setMonthFilter] = useState(generatePaymentMonth(new Date()));
+  const [monthFilter, setMonthFilter] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [yearOverride, setYearOverride] = useState<Record<string, boolean>>({});
 
   const filteredPayments = view === 'mes'
     ? payments.filter(p => p.month === selectedMonth && p.status === reportType)
@@ -24,15 +25,10 @@ export function Reports() {
   const allPaid = payments.filter(p => p.status === 'Pago');
   const allPending = payments.filter(p => p.status === 'Pendente');
   const allDelayed = payments.filter(p => p.status === 'Atrasado');
-  const totalCollected = allPaid.reduce((acc, curr) => acc + curr.amount, 0);
-  const totalPending = allPending.reduce((acc, curr) => acc + curr.amount, 0);
-  const totalDelayed = allDelayed.reduce((acc, curr) => acc + curr.amount, 0);
   const totalExpenses = expenses.reduce((acc, curr) => acc + curr.amount, 0);
-  const totalReceived = totalCollected - totalExpenses;
 
   const paidDonations = donations.filter(d => d.status === 'Pago');
   const totalPaidDonations = paidDonations.reduce((acc, d) => acc + d.amount, 0);
-  const allMonths = [...new Set([...payments.map(p => p.month), ...paidDonations.map(d => d.month)])].sort().reverse();
   const donorName = (donation: Donation) => {
     if (donation.memberId) {
       const member = members.find(m => m.id === donation.memberId);
@@ -54,15 +50,7 @@ export function Reports() {
     await deleteDonation(donation.id);
   };
 
-  // Receitas — Mensalidades e Doações
-  const monthMensalidade = payments
-    .filter(p => p.month === monthFilter && p.status === 'Pago')
-    .reduce((a, p) => a + p.amount, 0);
-  const monthDoacao = paidDonations
-    .filter(d => d.month === monthFilter)
-    .reduce((a, d) => a + d.amount, 0);
-  const monthTotal = monthMensalidade + monthDoacao;
-
+  // Filtros — mês (opcional) e período (De/Até)
   const fromT = dateFrom ? new Date(dateFrom + 'T00:00:00').getTime() : null;
   const toT = dateTo ? new Date(dateTo + 'T23:59:59').getTime() : null;
   const inRange = (dateStr: string | null) => {
@@ -73,11 +61,96 @@ export function Reports() {
     return true;
   };
   const hasDateFilter = fromT !== null || toT !== null;
-  const geralMensalidade = (hasDateFilter ? allPaid.filter(p => inRange(p.paymentDate)) : allPaid)
-    .reduce((a, p) => a + p.amount, 0);
-  const geralDoacao = (hasDateFilter ? paidDonations.filter(d => inRange(d.date)) : paidDonations)
-    .reduce((a, d) => a + d.amount, 0);
-  const geralTotal = geralMensalidade + geralDoacao;
+
+  const monthSelected = monthFilter !== '';
+  const inMonth = (m: string) => !monthSelected || m === monthFilter;
+  const inRangeMonth = (m: string) => {
+    if (fromT === null && toT === null) return true;
+    const t = new Date(m + '-01T00:00:00').getTime();
+    if (fromT !== null && t < fromT) return false;
+    if (toT !== null && t > toT) return false;
+    return true;
+  };
+  const listItemInFilter = (month: string, date: string | null) =>
+    inMonth(month) && (!hasDateFilter || (date ? inRange(date) : inRangeMonth(month)));
+
+  const filteredPaid = allPaid.filter(p => listItemInFilter(p.month, p.paymentDate));
+  const filteredPending = allPending.filter(p => listItemInFilter(p.month, null));
+  const filteredDelayed = allDelayed.filter(p => listItemInFilter(p.month, null));
+  const filteredPaidDonations = paidDonations.filter(d => listItemInFilter(d.month, d.date));
+  const filteredExpenses = hasDateFilter ? expenses.filter(e => inRange(e.date)) : expenses;
+
+  const cardMensalidade = filteredPaid.reduce((a, p) => a + p.amount, 0);
+  const cardSaida = filteredExpenses.reduce((a, e) => a + e.amount, 0);
+  const cardReceber = filteredPending.reduce((a, p) => a + p.amount, 0);
+  const cardAtrasado = filteredDelayed.reduce((a, p) => a + p.amount, 0);
+  const cardDoacoes = filteredPaidDonations.reduce((a, d) => a + d.amount, 0);
+  const cardTotal = cardMensalidade + cardDoacoes;
+
+  // Lista de pagamentos e doações por ano
+  type ListRow = {
+    key: string;
+    year: string;
+    month: string;
+    kind: 'mensalidade' | 'doacao';
+    name: string;
+    status: string;
+    dateLabel: string;
+    amount: number;
+  };
+  const listRows: ListRow[] = [
+    ...payments
+      .filter(p => listItemInFilter(p.month, p.status === 'Pago' ? p.paymentDate : null))
+      .map(p => {
+        const member = members.find(m => m.id === p.memberId);
+        return {
+          key: `p-${p.id}`,
+          year: p.month.slice(0, 4),
+          month: p.month,
+          kind: 'mensalidade' as const,
+          name: member?.name || 'Membro',
+          status: p.status,
+          dateLabel: p.status === 'Pago' && p.paymentDate
+            ? p.paymentDate.split('-').reverse().join('/')
+            : `Dia ${member?.dueDate ?? '—'}`,
+          amount: p.amount,
+        };
+      }),
+    ...donations
+      .filter(d => listItemInFilter(d.month, d.status === 'Pago' ? d.date : null))
+      .map(d => ({
+        key: `d-${d.id}`,
+        year: d.month.slice(0, 4),
+        month: d.month,
+        kind: 'doacao' as const,
+        name: donorName(d),
+        status: d.status,
+        dateLabel: d.date.split('-').reverse().join('/'),
+        amount: d.amount,
+      })),
+  ].sort((a, b) => b.month.localeCompare(a.month));
+
+  const listByYear = listRows.reduce<Record<string, ListRow[]>>((acc, r) => {
+    (acc[r.year] = acc[r.year] || []).push(r);
+    return acc;
+  }, {});
+  const listYears = Object.keys(listByYear).sort((a, b) => b.localeCompare(a));
+  const isYearOpen = (year: string) => {
+    const hasUnpaid = listByYear[year].some(r => r.status !== 'Pago');
+    return year in yearOverride ? yearOverride[year] : hasUnpaid;
+  };
+  const toggleYear = (year: string) => {
+    setYearOverride(prev => ({ ...prev, [year]: !isYearOpen(year) }));
+  };
+
+  const statusTag = (row: ListRow) => {
+    if (row.kind === 'doacao') {
+      return <span className="px-1.5 py-0.5 bg-[#1A4531] text-emerald-200 rounded text-[9px] font-bold uppercase tracking-wider">Doação</span>;
+    }
+    if (row.status === 'Pago') return <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 rounded text-[9px] font-bold uppercase tracking-wider">Pago</span>;
+    if (row.status === 'Pendente') return <span className="px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded text-[9px] font-bold uppercase tracking-wider">Pendente</span>;
+    return <span className="px-1.5 py-0.5 bg-rose-100 text-rose-700 rounded text-[9px] font-bold uppercase tracking-wider">Atrasado</span>;
+  };
 
   const handlePrint = () => {
     window.print();
@@ -121,8 +194,8 @@ export function Reports() {
             </div>
 
             {/* Filtros */}
-            <div className="px-4 py-3 border-b border-slate-100 bg-[#F6F9F6] flex flex-col sm:flex-row flex-wrap items-end gap-2 print:hidden">
-              <div className="flex items-center gap-2">
+            <div className="px-4 py-3 border-b border-slate-100 bg-[#F6F9F6] flex flex-wrap items-end gap-x-6 gap-y-3 print:hidden">
+              <div className="flex flex-wrap items-center gap-2">
                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Mês</label>
                 <input
                   type="month"
@@ -131,7 +204,7 @@ export function Reports() {
                   className="text-xs border border-slate-200 rounded-lg px-3 py-1.5 bg-white font-mono focus:outline-[#2E7A4A] focus:ring-1 focus:ring-[#2E7A4A]"
                 />
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">De</label>
                 <input
                   type="date"
@@ -157,174 +230,116 @@ export function Reports() {
               )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-4">
-              {/* Mês Atual */}
-              <div className="bg-[#F6F9F6] border border-slate-100 rounded-xl p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-[10px] font-bold text-[#2F6A4F] uppercase tracking-wider">Mês Atual</p>
-                  <span className="text-[10px] font-bold text-[#2F6A4F] bg-white border border-slate-200 px-2 py-0.5 rounded capitalize">
-                    {getMonthName(monthFilter)}
-                  </span>
+            {/* Cards de valores */}
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 p-4">
+              <div className="bg-[#EEF4F0] border border-[#A3BCA7]/30 rounded-xl p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <CheckCircle size={16} className="text-[#2E7A4A]" />
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Mensalidade</p>
                 </div>
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="text-center min-w-0">
-                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Mensalidade</p>
-                    <p className="text-sm md:text-base font-bold text-[#1A4531] whitespace-nowrap tabular-nums">{formatCurrency(monthMensalidade)}</p>
-                  </div>
-                  <div className="text-center min-w-0">
-                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Doação</p>
-                    <p className="text-sm md:text-base font-bold text-[#2E7A4A] whitespace-nowrap tabular-nums">{formatCurrency(monthDoacao)}</p>
-                  </div>
-                  <div className="text-center min-w-0">
-                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Total</p>
-                    <p className="text-sm md:text-base font-bold text-slate-800 whitespace-nowrap tabular-nums">{formatCurrency(monthTotal)}</p>
-                  </div>
-                </div>
+                <p className="text-xl font-bold text-[#1A4531]">{formatCurrency(cardMensalidade)}</p>
+                <p className="text-[10px] text-slate-400 mt-1">{filteredPaid.length} pagamentos confirmados</p>
               </div>
-
-              {/* Geral */}
-              <div className="bg-[#1A4531] border border-[#23603A] rounded-xl p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-[10px] font-bold text-[#A3BCA7] uppercase tracking-wider">Geral</p>
-                  <span className="text-[10px] font-bold text-emerald-300 uppercase">
-                    {hasDateFilter ? 'Período filtrado' : 'Todo o período'}
-                  </span>
+              <div className="bg-white p-4 rounded-xl border border-rose-100 bg-rose-50/30">
+                <div className="flex items-center gap-2 mb-2">
+                  <TrendingDown size={16} className="text-rose-500" />
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">De Saída</p>
                 </div>
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="text-center min-w-0">
-                    <p className="text-[9px] font-bold text-[#A3BCA7] uppercase tracking-wider mb-1">Mensalidade</p>
-                    <p className="text-sm md:text-base font-bold text-white whitespace-nowrap tabular-nums">{formatCurrency(geralMensalidade)}</p>
-                  </div>
-                  <div className="text-center min-w-0">
-                    <p className="text-[9px] font-bold text-[#A3BCA7] uppercase tracking-wider mb-1">Doação</p>
-                    <p className="text-sm md:text-base font-bold text-emerald-300 whitespace-nowrap tabular-nums">{formatCurrency(geralDoacao)}</p>
-                  </div>
-                  <div className="text-center min-w-0">
-                    <p className="text-[9px] font-bold text-[#A3BCA7] uppercase tracking-wider mb-1">Total</p>
-                    <p className="text-sm md:text-base font-bold text-white whitespace-nowrap tabular-nums">{formatCurrency(geralTotal)}</p>
-                  </div>
+                <p className="text-xl font-bold text-rose-500">{formatCurrency(cardSaida)}</p>
+                <p className="text-[10px] text-slate-400 mt-1">{filteredExpenses.length} despesas</p>
+              </div>
+              <div className="bg-white p-4 rounded-xl border border-amber-100 bg-amber-50/30">
+                <div className="flex items-center gap-2 mb-2">
+                  <Clock size={16} className="text-amber-500" />
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">A Receber</p>
                 </div>
+                <p className="text-xl font-bold text-amber-500">{formatCurrency(cardReceber)}</p>
+                <p className="text-[10px] text-slate-400 mt-1">{filteredPending.length} pendentes</p>
+              </div>
+              <div className="bg-white p-4 rounded-xl border border-rose-100 bg-rose-50/30">
+                <div className="flex items-center gap-2 mb-2">
+                  <AlertTriangle size={16} className="text-rose-500" />
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Em Atraso</p>
+                </div>
+                <p className="text-xl font-bold text-rose-500">{formatCurrency(cardAtrasado)}</p>
+                <p className="text-[10px] text-slate-400 mt-1">{filteredDelayed.length} atrasados</p>
+              </div>
+              <div className="bg-[#1A4531] p-4 rounded-xl border border-[#23603A] shadow-[0_4px_20px_rgba(0,0,0,0.06)]">
+                <div className="flex items-center gap-2 mb-2">
+                  <HeartHandshake size={16} className="text-[#A3BCA7]" />
+                  <p className="text-[10px] font-bold text-[#A3BCA7] uppercase tracking-wider">Doações</p>
+                </div>
+                <p className="text-xl font-bold text-emerald-300">{formatCurrency(cardDoacoes)}</p>
+                <p className="text-[10px] text-[#A3BCA7] mt-1">{filteredPaidDonations.length} doações</p>
+              </div>
+              <div className="bg-[#1A4531] p-4 rounded-xl border border-[#23603A] shadow-[0_4px_20px_rgba(0,0,0,0.06)] relative overflow-hidden">
+                <div className="absolute top-0 right-0 -mr-4 -mt-4 w-16 h-16 rounded-full bg-[#2E7A4A] opacity-20 blur-xl"></div>
+                <div className="flex items-center gap-2 mb-2 relative z-10">
+                  <DollarSign size={16} className="text-[#A3BCA7]" />
+                  <p className="text-[10px] font-bold text-[#A3BCA7] uppercase tracking-wider">Total</p>
+                </div>
+                <p className="text-xl font-bold text-white relative z-10">{formatCurrency(cardTotal)}</p>
+                <p className="text-[10px] text-[#A3BCA7] mt-1 relative z-10">Mensalidade + Doações</p>
               </div>
             </div>
           </div>
 
-          {/* Summary Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 shrink-0">
-            <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
-              <div className="flex items-center gap-2 mb-2">
-                <CheckCircle size={16} className="text-[#2E7A4A]" />
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Recebido</p>
-              </div>
-              <p className="text-2xl font-bold text-[#2E7A4A]">{formatCurrency(totalCollected)}</p>
-              <p className="text-[10px] text-slate-400 mt-1">{allPaid.length} pagamentos confirmados</p>
-            </div>
-            <div className="bg-white p-4 rounded-2xl border border-amber-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] bg-amber-50/30">
-              <div className="flex items-center gap-2 mb-2">
-                <Clock size={16} className="text-amber-500" />
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">A Receber</p>
-              </div>
-              <p className="text-2xl font-bold text-amber-500">{formatCurrency(totalPending)}</p>
-              <p className="text-[10px] text-slate-400 mt-1">{allPending.length} pendentes</p>
-            </div>
-            <div className="bg-white p-4 rounded-2xl border border-rose-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] bg-rose-50/30">
-              <div className="flex items-center gap-2 mb-2">
-                <AlertTriangle size={16} className="text-rose-500" />
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Em Atraso</p>
-              </div>
-              <p className="text-2xl font-bold text-rose-500">{formatCurrency(totalDelayed)}</p>
-              <p className="text-[10px] text-slate-400 mt-1">{allDelayed.length} atrasados</p>
-            </div>
-            <div className="bg-[#1A4531] p-4 rounded-2xl border border-[#23603A] shadow-[0_4px_20px_rgba(0,0,0,0.06)] relative overflow-hidden">
-              <div className="absolute top-0 right-0 -mr-4 -mt-4 w-16 h-16 rounded-full bg-[#2E7A4A] opacity-20 blur-xl"></div>
-              <div className="flex items-center gap-2 mb-2 relative z-10">
-                <DollarSign size={16} className="text-[#A3BCA7]" />
-                <p className="text-[10px] font-bold text-[#A3BCA7] uppercase tracking-wider">Saldo Geral</p>
-              </div>
-              <p className="text-2xl font-bold text-white relative z-10">{formatCurrency(totalReceived)}</p>
-              <p className="text-[10px] text-[#A3BCA7] mt-1 relative z-10">Recebido - Despesas ({formatCurrency(totalExpenses)})</p>
-            </div>
-          </div>
-
-          {/* Totais por Mês — Mensalidade | Doação | Total */}
+          {/* Pagamentos e Doações por Ano — acordeão */}
           <div className="bg-white border border-slate-100 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.03)] flex flex-col md:min-h-0 md:flex-1 overflow-hidden">
-            <div className="px-4 py-3 border-b border-slate-100 shrink-0 bg-[#F6F9F6]">
-              <h3 className="text-[12px] font-bold text-[#1A4531] uppercase tracking-wider">Totais por Mês · Mensalidades e Doações</h3>
+            <div className="px-4 py-3 border-b border-slate-100 bg-[#1A4531] flex items-center justify-between gap-2 shrink-0">
+              <h3 className="text-[12px] font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                <ListChecks size={14} className="text-emerald-300" />
+                Pagamentos e Doações por Ano
+              </h3>
+              <span className="text-xs font-bold text-emerald-300">
+                Total: {formatCurrency(cardTotal)}
+              </span>
             </div>
-            <div className="overflow-x-auto md:flex-1 md:overflow-y-auto">
 
-              {/* Mobile View */}
-              <div className="md:hidden divide-y divide-slate-100">
-                {allMonths.map(month => {
-                  const mMen = payments.filter(p => p.month === month && p.status === 'Pago').reduce((a, c) => a + c.amount, 0);
-                  const mDon = paidDonations.filter(d => d.month === month).reduce((a, c) => a + c.amount, 0);
-                  return (
-                    <div key={month} className="p-4">
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm font-bold text-[#1A4531] capitalize">{getMonthName(month)}</span>
-                        <span className="text-[11px] font-bold text-white bg-[#1A4531] px-2.5 py-1 rounded-md">
-                          {formatCurrency(mMen + mDon)}
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2 text-center">
-                        <div className="bg-[#EEF4F0] rounded-lg p-2 border border-[#EEF4F0]">
-                          <p className="text-[9px] text-[#2F6A4F] uppercase font-bold tracking-wider mb-0.5">Mensalidade</p>
-                          <p className="text-xs font-bold text-[#1A4531]">{formatCurrency(mMen)}</p>
-                        </div>
-                        <div className="bg-white rounded-lg p-2 border border-emerald-100">
-                          <p className="text-[9px] text-emerald-600 uppercase font-bold tracking-wider mb-0.5">Doação</p>
-                          <p className="text-xs font-bold text-[#2E7A4A]">{formatCurrency(mDon)}</p>
-                        </div>
-                      </div>
+            {listYears.length === 0 && (
+              <div className="px-4 py-8 text-center text-xs text-slate-500">Nenhum registro encontrado para este filtro.</div>
+            )}
+
+            <div className="divide-y divide-slate-100">
+              {listYears.map(year => (
+                <div key={year}>
+                  <button
+                    type="button"
+                    onClick={() => toggleYear(year)}
+                    className="w-full px-4 py-3 bg-[#F6F9F6] flex items-center justify-between gap-3 text-left hover:bg-[#F0F6F1] transition-colors"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="text-sm font-bold text-[#1A4531]">{year}</span>
+                      <span className={`text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider ${
+                        listByYear[year].some(r => r.status !== 'Pago') ? 'bg-amber-50 text-amber-700 border border-amber-100' : 'bg-[#EEF4F0] text-[#2F6A4F]'
+                      }`}>
+                        {listByYear[year].some(r => r.status !== 'Pago') ? `${listByYear[year].filter(r => r.status !== 'Pago').length} em aberto` : 'Em dia'}
+                      </span>
                     </div>
-                  );
-                })}
-                {allMonths.length === 0 && (
-                  <div className="px-4 py-8 text-center text-xs text-slate-500">Nenhum registro encontrado.</div>
-                )}
-              </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <span className="text-sm font-bold text-slate-800">{formatCurrency(listByYear[year].reduce((a, r) => a + r.amount, 0))}</span>
+                      <ChevronDown size={18} className={`text-slate-400 transition-transform shrink-0 ${isYearOpen(year) ? 'rotate-180' : ''}`} />
+                    </div>
+                  </button>
 
-              {/* Desktop View */}
-              <table className="hidden md:table w-full text-left border-collapse min-w-[500px]">
-                <thead className="bg-white sticky top-0 z-10 shadow-sm">
-                  <tr>
-                    <th className="px-4 py-3 text-[10px] font-bold text-[#2F6A4F] uppercase tracking-wider border-b border-slate-100">Mês</th>
-                    <th className="px-4 py-3 text-[10px] font-bold text-[#2F6A4F] uppercase tracking-wider border-b border-slate-100 text-right">Mensalidade</th>
-                    <th className="px-4 py-3 text-[10px] font-bold text-[#2F6A4F] uppercase tracking-wider border-b border-slate-100 text-right">Doação</th>
-                    <th className="px-4 py-3 text-[10px] font-bold text-[#2F6A4F] uppercase tracking-wider border-b border-slate-100 text-right">Total</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50">
-                  {allMonths.map(month => {
-                    const mMen = payments.filter(p => p.month === month && p.status === 'Pago').reduce((a, c) => a + c.amount, 0);
-                    const mDon = paidDonations.filter(d => d.month === month).reduce((a, c) => a + c.amount, 0);
-                    return (
-                      <tr key={month} className="hover:bg-slate-50">
-                        <td className="px-4 py-2.5 text-xs font-bold text-slate-800 capitalize">{getMonthName(month)}</td>
-                        <td className="px-4 py-2.5 text-right text-xs font-bold text-[#1A4531]">
-                          {formatCurrency(mMen)}
-                        </td>
-                        <td className="px-4 py-2.5 text-right text-xs font-bold text-[#2E7A4A]">
-                          {formatCurrency(mDon)}
-                        </td>
-                        <td className="px-4 py-2.5 text-right text-xs font-bold text-slate-800">
-                          {formatCurrency(mMen + mDon)}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                  {allMonths.length === 0 && (
-                    <tr><td colSpan={4} className="px-4 py-8 text-center text-xs text-slate-500">Nenhum registro encontrado.</td></tr>
+                  {isYearOpen(year) && (
+                    <div className="divide-y divide-slate-50 bg-slate-50/30">
+                      {listByYear[year].map(row => (
+                        <div key={row.key} className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 px-4 sm:px-6 py-3">
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="text-xs font-bold text-slate-800 truncate">{row.name}</p>
+                              {statusTag(row)}
+                            </div>
+                            <p className="text-[10px] text-slate-400 font-mono mt-0.5 capitalize">{getMonthName(row.month)} · {row.dateLabel}</p>
+                          </div>
+                          <div className="text-sm font-bold text-slate-800 shrink-0">{formatCurrency(row.amount)}</div>
+                        </div>
+                      ))}
+                    </div>
                   )}
-                </tbody>
-                <tfoot className="bg-[#F6F9F6] border-t border-slate-200">
-                  <tr>
-                    <td className="px-4 py-3 text-[11px] font-bold text-[#1A4531] uppercase tracking-wider">Total Geral</td>
-                    <td className="px-4 py-3 text-right text-xs font-bold text-[#1A4531]">{formatCurrency(totalCollected)}</td>
-                    <td className="px-4 py-3 text-right text-xs font-bold text-[#2E7A4A]">{formatCurrency(totalPaidDonations)}</td>
-                    <td className="px-4 py-3 text-right text-xs font-bold text-slate-800">{formatCurrency(totalCollected + totalPaidDonations)}</td>
-                  </tr>
-                </tfoot>
-              </table>
+                </div>
+              ))}
             </div>
           </div>
 
