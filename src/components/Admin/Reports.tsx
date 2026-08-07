@@ -13,11 +13,11 @@ export function Reports() {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [yearOverride, setYearOverride] = useState<Record<string, boolean>>({});
+  const [printAll, setPrintAll] = useState(false);
 
   const allPaid = payments.filter(p => p.status === 'Pago');
   const allPending = payments.filter(p => p.status === 'Pendente');
   const allDelayed = payments.filter(p => p.status === 'Atrasado');
-  const totalExpenses = expenses.reduce((acc, curr) => acc + curr.amount, 0);
 
   const paidDonations = donations.filter(d => d.status === 'Pago');
   const donorName = (donation: Donation) => {
@@ -136,7 +136,7 @@ export function Reports() {
   const monthsOf = (year: string) => Object.keys(listByYear[year]).sort((a, b) => b.localeCompare(a));
   const isYearOpen = (year: string) => {
     const hasUnpaid = Object.values(listByYear[year]).some(ms => ms.some(r => r.status !== 'Pago'));
-    return year in yearOverride ? yearOverride[year] : hasUnpaid;
+    return printAll || (year in yearOverride ? yearOverride[year] : hasUnpaid);
   };
   const toggleYear = (year: string) => {
     setYearOverride(prev => ({ ...prev, [year]: !isYearOpen(year) }));
@@ -152,16 +152,35 @@ export function Reports() {
   };
 
   const handlePrint = () => {
-    window.print();
+    setPrintAll(true);
+    window.setTimeout(() => {
+      window.print();
+      setPrintAll(false);
+    }, 150);
   };
 
+  const typeLabel = typeFilter === 'todos' ? 'Todos os tipos' : typeFilter === 'mensalidade' ? 'Somente mensalidades' : 'Somente doações';
+  const filterPeriodLabel = `${dateFrom ? dateFrom.split('-').reverse().join('/') : '—'} até ${dateTo ? dateTo.split('-').reverse().join('/') : '—'}`;
+
   return (
-    <div className="flex-1 flex flex-col h-full space-y-4 min-h-0">
+    <div className="print-area flex-1 flex flex-col h-full space-y-4 min-h-0">
       <div className="flex justify-end items-center shrink-0 print:hidden">
          <button onClick={handlePrint} className="px-4 py-2 bg-slate-800 text-white text-xs font-bold rounded shadow hover:bg-slate-700 transition-colors flex items-center gap-2">
             <Printer size={14} />
             IMPRIMIR
          </button>
+      </div>
+
+      {/* Cabeçalho de impressão (só no PDF) */}
+      <div className="hidden print:block print:pb-4 print:mb-2 print:border-b print:border-[#1A4531]">
+        <h1 className="text-2xl font-bold text-[#1A4531]">Centro Espírita Lírios do Pântano</h1>
+        <h2 className="text-base font-bold text-slate-700 mt-1">Relatório de Mensalidades e Doações</h2>
+        <p className="text-xs text-slate-600 font-mono mt-2">
+          Filtros: {typeLabel} · Ano: {yearFilter || 'Todos'} · Mês: {monthFilter ? `${getMonthName(monthFilter)} ${monthFilter.slice(0, 4)}` : 'Todos'} · Período: {filterPeriodLabel}
+        </p>
+        <p className="text-xs text-slate-500 font-mono mt-1">
+          Gerado em {new Date().toLocaleDateString('pt-BR')} às {new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+        </p>
       </div>
 
       {/* ─── VISÃO GERAL ─────────────────────────────────────── */}
@@ -338,13 +357,13 @@ export function Reports() {
                           const monthRows = listByYear[year][month];
                           return (
                             <div key={month}>
-                              <div className="px-4 sm:px-6 py-2 bg-white flex items-center justify-between border-b border-slate-100">
+                              <div className="px-4 sm:px-6 py-2 bg-white flex items-center justify-between border-b border-slate-100 print-break">
                                 <span className="text-[11px] font-bold text-[#2F6A4F] uppercase tracking-wider capitalize">{getMonthName(month)}</span>
                                 <span className="text-[11px] font-bold text-slate-700">{formatCurrency(monthRows.reduce((a, r) => a + r.amount, 0))}</span>
                               </div>
                               <div className="divide-y divide-slate-50 bg-slate-50/30">
                                 {monthRows.map(row => (
-                                  <div key={row.key} className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 px-4 sm:px-6 py-3">
+                                  <div key={row.key} className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 px-4 sm:px-6 py-3 print-break">
                                     <div className="min-w-0">
                                       <div className="flex items-center gap-2 flex-wrap">
                                         <p className="text-xs font-bold text-slate-800 truncate">{row.name}</p>
@@ -363,7 +382,7 @@ export function Reports() {
                                             const d = donations.find(x => x.id === row.donationId);
                                             if (d) handleDeleteDonation(d);
                                           }}
-                                          className="text-rose-400 hover:text-rose-600 transition-colors"
+                                          className="text-rose-400 hover:text-rose-600 transition-colors print:hidden"
                                           title="Excluir doação"
                                         >
                                           <Trash2 size={14} />
@@ -385,10 +404,10 @@ export function Reports() {
           </div>
 
           {/* Despesas */}
-          {expenses.length > 0 && (
+          {filteredExpenses.length > 0 && (
             <div className="bg-white border border-slate-100 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.03)] flex flex-col overflow-hidden shrink-0">
               <div className="px-4 py-3 border-b border-slate-100 bg-[#F6F9F6]">
-                <h3 className="text-[12px] font-bold text-[#1A4531] uppercase tracking-wider">Despesas ({expenses.length})</h3>
+                <h3 className="text-[12px] font-bold text-[#1A4531] uppercase tracking-wider">Despesas ({filteredExpenses.length})</h3>
               </div>
               <div className="overflow-x-auto md:max-h-60 md:overflow-y-auto">
                 <table className="w-full text-left border-collapse">
@@ -400,8 +419,8 @@ export function Reports() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
-                    {expenses.map(exp => (
-                      <tr key={exp.id} className="hover:bg-slate-50">
+                    {filteredExpenses.map(exp => (
+                      <tr key={exp.id} className="hover:bg-slate-50 print-break">
                         <td className="px-4 py-2 text-xs font-bold text-slate-800">{exp.description}</td>
                         <td className="px-4 py-2 text-[10px] text-slate-500 font-mono">{exp.date.split('-').reverse().join('/')}</td>
                         <td className="px-4 py-2 text-xs font-bold text-rose-600 text-right">{formatCurrency(exp.amount)}</td>
@@ -411,7 +430,7 @@ export function Reports() {
                   <tfoot className="bg-slate-50 border-t-2 border-slate-200">
                     <tr>
                       <td colSpan={2} className="px-4 py-2 text-xs font-bold text-slate-800 uppercase">Total Despesas</td>
-                      <td className="px-4 py-2 text-xs font-bold text-rose-600 text-right">{formatCurrency(totalExpenses)}</td>
+                      <td className="px-4 py-2 text-xs font-bold text-rose-600 text-right">{formatCurrency(cardSaida)}</td>
                     </tr>
                   </tfoot>
                 </table>
@@ -423,26 +442,50 @@ export function Reports() {
       
       <style dangerouslySetInnerHTML={{__html: `
         @media print {
-          body * {
-            visibility: hidden;
+          @page { size: A4; margin: 12mm; }
+
+          body * { visibility: hidden; }
+          .print-area, .print-area * { visibility: visible; }
+
+          html, body, #root, #root > div, main {
+            position: static !important;
+            height: 0 !important;
+            min-height: 0 !important;
+            max-height: none !important;
+            overflow: visible !important;
           }
-          .print\\:block, .print\\:block * {
-            visibility: visible;
-          }
-          main, .bg-white {
+
+          .print-area {
             position: absolute;
             left: 0;
             top: 0;
-            width: 100%;
+            width: 100% !important;
+            max-width: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
             height: auto !important;
+            min-height: 0 !important;
+          }
+
+          .print-area, .print-area * {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+
+          .print-area * {
+            box-shadow: none !important;
             overflow: visible !important;
-            visibility: visible;
+            height: auto !important;
+            min-height: 0 !important;
+            max-height: none !important;
           }
-          .bg-white * {
-            visibility: visible;
-          }
-          .print\\:hidden {
-            display: none !important;
+
+          .print\\:hidden { display: none !important; }
+          .print\\:block { display: block !important; }
+
+          .print-break {
+            page-break-inside: avoid;
+            break-inside: avoid;
           }
         }
       `}} />
