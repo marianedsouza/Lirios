@@ -37,6 +37,7 @@ export function AvisosAccordion({ memberId }: AvisosAccordionProps) {
 
   const isRead = (id: string) => !!localRead[id] || !!avisos.find(a => a.id === id)?.isRead;
   const isOpen = (id: string) => (id in openOverride ? openOverride[id] : !isRead(id));
+  const hasUnread = avisos.some(a => !isRead(a.id));
 
   const toggle = (id: string) => {
     const next = !isOpen(id);
@@ -52,6 +53,11 @@ export function AvisosAccordion({ memberId }: AvisosAccordionProps) {
       <div className="px-6 py-4 border-b border-slate-100 bg-[#F6F9F6] flex items-center gap-2">
         <Megaphone size={16} className="text-[#2E7A4A]" />
         <h3 className="text-sm font-bold text-[#1A4531] uppercase tracking-wider">Avisos</h3>
+        {hasUnread && (
+          <span className="inline-flex items-center text-[9px] font-bold text-white bg-[#2E7A4A] px-2 py-0.5 rounded-full uppercase tracking-wider">
+            Novo
+          </span>
+        )}
         {!loaded && <span className="text-[10px] text-slate-400 ml-auto">Carregando...</span>}
       </div>
       <div className="divide-y divide-slate-100">

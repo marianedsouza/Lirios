@@ -14,6 +14,7 @@ interface MemberPortalProps {
 
 export function MemberPortal({ memberId, onLogout }: MemberPortalProps) {
   const { members, settings, getMemberPayments, getMemberReceipts, refreshPayments, donations, addDonation } = useAppStore();
+  const payments = getMemberPayments(memberId);
   const [mpLoading, setMpLoading] = useState<string | null>(null);
   const [mpError, setMpError] = useState<string | null>(null);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
@@ -21,6 +22,7 @@ export function MemberPortal({ memberId, onLogout }: MemberPortalProps) {
   const [donationLoading, setDonationLoading] = useState(false);
   const [donationError, setDonationError] = useState<string | null>(null);
   const [donationOpen, setDonationOpen] = useState(false);
+  const [mensalidadesOpen, setMensalidadesOpen] = useState(() => payments.some(p => p.status !== 'Pago'));
 
   // Detecta retorno do Mercado Pago via query string ?payment=success
   useEffect(() => {
@@ -36,7 +38,6 @@ export function MemberPortal({ memberId, onLogout }: MemberPortalProps) {
   }, [refreshPayments]);
 
   const member = members.find(m => m.id === memberId);
-  const payments = getMemberPayments(memberId);
   const memberReceipts = getMemberReceipts(memberId);
 
   if (!member) {
@@ -212,12 +213,21 @@ export function MemberPortal({ memberId, onLogout }: MemberPortalProps) {
           <GuidelinesAccordion text={settings.houseGuidelines} />
         )}
 
-        {/* Lista de mensalidades */}
+        {/* Lista de mensalidades — acordeão fechado por padrão */}
         <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100 bg-[#F6F9F6]">
-            <h3 className="text-sm font-bold text-[#1A4531] uppercase tracking-wider">Seu Histórico de Mensalidades</h3>
-          </div>
+          <button
+            type="button"
+            onClick={() => setMensalidadesOpen(o => !o)}
+            className="w-full px-6 py-4 border-b border-slate-100 bg-[#F6F9F6] flex items-center justify-between gap-2 text-left hover:bg-[#F0F6F1] transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <CreditCard size={16} className="text-[#2E7A4A]" />
+              <h3 className="text-sm font-bold text-[#1A4531] uppercase tracking-wider">Suas Mensalidades</h3>
+            </div>
+            <ChevronDown size={18} className={`text-slate-400 transition-transform shrink-0 ${mensalidadesOpen ? 'rotate-180' : ''}`} />
+          </button>
 
+          {mensalidadesOpen && (
           <div className="divide-y divide-slate-100">
             {years.map(year => {
               const yearPayments = groupedByYear[year];
@@ -305,6 +315,7 @@ export function MemberPortal({ memberId, onLogout }: MemberPortalProps) {
               </div>
             )}
           </div>
+          )}
         </div>
 
         {/* Doação — acordeão fechado por padrão */}
